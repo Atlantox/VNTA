@@ -51,6 +51,22 @@ class ActionChain:
     def get_points_as_list(self):
         return [v for k,v in self.points.items()]
     
+    def decision_is_compatible(self, decision:Decision):
+        ''' Return True if the passed decision are valid to take, otherwhise return False '''
+        result = True
+
+        if self.finished:
+            #  Finished ActionChains can't take more decisions
+            result = False
+
+        if decision.dependency is not None and decision.dependency not in self.idList:
+            #  If the decision depends of an previous decision that wasn't taked
+            #  the ActionChain can't take that decision
+            result = False
+
+        return result
+
+
     def finish(self):
         self.finished = True
         lastDecision =self.decisionChain[-1]

@@ -1,89 +1,88 @@
-from ActionChain import ActionChain
-from Decision import Decision
+import pickle
 
+from core import *
 
-# id, type, name, option, comment, friendship, qualification
-# 22;D;qué hacer?;nada;;0;0
-# 23;D;¿qué hacer?;atacar;;0;1
+# id, type, name, option, dependency, comment, friendship, qualification
 
-# 48;C;Estás a punto de caerte;22;No hiciste nada;0;0
-# 49;C;Estás a punto de caerte;23;Atacaste;0;0
-
-# 55;I;El instructor habla de su pasado;>=;Ficha del instructor desbloqueado;;6
-# 56;I;Situación rara;>=,<;;4;6
-
-# 102;GE;El prota vive feliz con la chica;>=;Final bueno;8;
-# 103;BE;El prota se suicida;<;Final malo;8;
+filePath = ''
+fileName = ''
+fileFormat = ''
+all_ways:list[ActionChain] = []  # The list of all ActionChain
+all_decisions, novel_points = [], []
+endings = {}  # Ending statistics
 
 def run():
-    original_points = {'amistad':0, 'calificación':0}
-    endings = {}
+    global all_decisions, novel_points, fileName, filePath, fileFormat
+    filePath = 'D:/Proyectos/VNTA/decisions.csv'
+    fileName, fileFormat = GetFileNameAndFormat(filePath)
 
-    all_decisions = ReadDecisions()
+    if fileFormat == '.csv':
+        all_decisions, novel_points = ReadDecisions(filePath)
+        CreateDecisionsTree()
+    elif fileFormat == '.vnta':
+        LoadDecisionsTree()  
 
-    all_ways = []
-    crt_dec = 0  # Current decision
+def CreateDecisionsTree():
+    crt_id = 0  # Current decision index
 
-    while crt_dec < len(all_decisions):
-        currentDecision =  all_decisions[crt_dec]
+    while crt_id < len(all_decisions):
+        currentDecision:Decision =  all_decisions[crt_id]
 
-        if currentDecision.type.upper() == 'D':  # Decision
-            i = 1
-            related_decisions = [currentDecision]
-            while currentDecision.name == all_decisions[crt_dec + i].name:
-                related_decisions.append(all_decisions[crt_dec + i])
-                i += 1
-                if crt_dec + i >= len(all_decisions): break
+        if currentDecision.type == 'D':  # Decision
+            ''' A decision consist in  '''
+            related_decisions = GetRelatedDecisions(currentDecision, crt_id)            
 
-            crt_dec += i - 1
+            crt_id += len(related_decisions) - 1 # Skipping the related decisions for the while loop
             i = 0
 
-
             if all_ways == []:
-                for r in related_decisions:                    
-                    to_add = ActionChain([r], original_points).change_points(r)
+                # We insert the first decision, the begin of all paths
+                for decision in related_decisions:                    
+                    to_add = ActionChain([decision], novel_points).change_points(decision)
                     all_ways.append(to_add)
 
             else:
+                # At least one path exists
                 for i in range(len(all_ways)):
-                    original_way = all_ways[i].copy()
-                    
-                    if all_ways[i].finished:
+                    #  For each path we will try to take the current decision
+                    if not all_ways[i].decision_is_compatible(currentDecision):
                         continue
 
+                    original_way = all_ways[i].copy() # A copy of the current way before it changes                    
+
                     first = True
-                    for r in related_decisions:
+                    for decision in related_decisions:
                         if first:
-                            all_ways[i].take_decision(r)
+                            # If is the first decision, the current path will take it
+                            all_ways[i].take_decision(decision)
                             first = False
                         else:
-                            all_ways.append(original_way.copy().take_decision(r))
+                            # If not the first decision, a copy of the original way take the decision and appends it in all_ways
+                            all_ways.append(original_way.copy().take_decision(decision))
 
 
         elif currentDecision.type == 'C':  # Consecuence
+            ''' Consecuence decision consist in a decision that happen depending of a previous decision taked '''
             if all_ways == []:
                 print(f'Consecuences needs a anterior decision in {currentDecision}')
             else:
                 for way in all_ways:
-                    if way.finished:
+                    if not all_ways[i].decision_is_compatible(currentDecision):
                         continue
 
-                    if int(currentDecision.option) in way.idList:
-                        way.take_decision(currentDecision)
+                    way.take_decision(currentDecision)
 
         elif currentDecision.type == 'I':   # If condition
             for way in all_ways:
-                if way.finished:
-                    continue
+                if not all_ways[i].decision_is_compatible(currentDecision):
+                        continue
 
                 CheckCondition(way, currentDecision)
 
-        # 102;ED-good;El prota vive feliz con la chica;>=;Final bueno;8;
-        # 103;ED-end;El prota se suicida;<;Final malo;8;
-        elif 'ED-' in currentDecision.type:  # Good ending
+        elif 'ED-' in currentDecision.type:  # Endings
             for way in all_ways:
-                if way.finished:
-                    continue
+                if not all_ways[i].decision_is_compatible(currentDecision):
+                        continue
                 
                 if CheckCondition(way, currentDecision):
                     way.finish()
@@ -96,93 +95,77 @@ def run():
                         
 
         else:
-            print(f'{currentDecision.id} decision has wrong type: {currentDecision.type}')
+            print(f'{currentDecision.id} decision has wrong type: {currentDecision.type}\nPlease use D, C, I or Ed-')
 
-        crt_dec += 1
+        crt_id += 1
 
-    print('')
+    if fileFormat == '.csv':
+        SaveDataInFile()
+
+    DisplayTotals()
+
+def LoadDecisionsTree():
+    '''
+    If a .vnta file is given, all data is loaded from that file
+    This function is usefull when you have a really really big decision tree
+    '''
+    global all_ways, novel_points, endings
+    file = open(filePath, 'rb')
+    data = pickle.load(file)
+    file.close()
+
+    all_ways = data['all_ways']
+    novel_points = data['novel_points']
+    endings = data['endings']
+    DisplayTotals()
+
+
+def DisplayMenu():
+    ''' Shows a menu to get useful data about the decision tree '''
+    while True:
+        print('Mostrando menú')
+
+
+def SaveDataInFile():
+    ''' Once created the decision tree, it is saved in a file to prevent to create another equal decision tree '''
+    new_path = filePath.replace(fileName + fileFormat, fileName + '.vnta')
+    file = open(new_path, 'wb')
+    to_save = {
+        'all_ways': all_ways,
+        'novel_points': novel_points,
+        'endings': endings
+    }
+    pickle.dump(to_save, file)
+    file.close()
+
+
+def GetRelatedDecisions(decision, crt_id):
+    ''' Get a decision and all the next related decisions '''
+    i = 1
+    related_decisions = [decision]
+    while decision.name == all_decisions[crt_id + i].name:
+        related_decisions.append(all_decisions[crt_id + i])
+        i += 1
+        if crt_id + i >= len(all_decisions): break
+    
+    return related_decisions
+
+def DisplayTotals():
+    ''' Show ways number and percents of each ending '''
+    global all_ways
+    all_ways = GetSortedActionChain(all_ways)
+
     #for way in all_ways:
         #print(way, '····', way.points)
 
     print('Total ways:', len(all_ways))
-    #print('Endings:', endings)
 
     totals = f'\nTotal endings:\n'
     for key, value in endings.items():
         percent = (value * 100) / len(all_ways)
-        totals += f'{key}: {value} -> {percent}% -> {percent / 100} \n'
+        totals += f'   {key}: {value} -> {percent}% -> {percent / 100} \n'
 
     print(totals)
-
-def ReadDecisions():
-    decisions = []
-    with open('decisions.csv') as f:
-        lines = f.readlines()
-        f.close()
-    
-    for line in lines:
-        print(line)
-
-    decisions = [
-        Decision(1, 'D', '¿qué hacer?', 'nada', '', [1,None]),
-        Decision(2, 'D', '¿qué hacer?', 'atacar', '', [None,1]),
-        Decision(3, 'D', '¿a quien le das el pescado?', 'A Kat', '', None),
-        Decision(4, 'D', '¿a quien le das el pescado?', "a Liz'Amar", '', [4,None]),
-        Decision(5, 'D', "Con Liz'Amar solos en la habitación de Berto", "Pasar el rato con ella", 'follan', [2,-2]),
-        #Decision(20, 'ED-bad', "Expulsado por inepto", "<", 'Final malo', [None, -1]),
-        Decision(6, 'D', "Con Liz'Amar solos en la habitación de Berto", "Salir a entrenar", 'No follan', [-2,2]),
-        Decision(7, 'D', "Mark'Zarog te pide que lo ayudes con Ámber", "Ayudarlo", '', None),
-        Decision(8, 'D', "Mark'Zarog te pide que lo ayudes con Ámber", "Negarte", '', [None,1]),
-        Decision(9, 'D', "¿a quién invitar a salir?", 'Ámber', '', None),
-        Decision(10, 'D', "¿a quién invitar a salir?", 'Kat', '', [2, None]),
-        Decision(11, 'D', "¿a quién invitar a salir?", 'Instructor', '', [None, 2]),
-        Decision(12, 'D', "¿a quién invitar a salir?", "Mark'Zarog", '', None),
-        Decision(13, 'C', "Le diste el pescado a Kat", "3", 'Te follas a Kat', None),
-        Decision(14, 'C', "Le diste el pescado a Liz'Amar", "4", 'Follan', None),
-        Decision(15, 'I', "El jefe te interrumpe", ">=", 'Ficha del jefe desbloqueada', [None, 3]),
-        Decision(16, 'I', "El jefe te interrumpe", "<", 'Sales a entrenar', [None, 3]),
-        Decision(17, 'ED-good', "Te quedas con la chica", ">=", 'Final bueno', [4, None]),
-        Decision(18, 'ED-neutral', "La chica te rechaza pero siguen siendo amigos", "=", 'Final neutral', [3, None]),
-        Decision(19, 'ED-bad', "El prota se suicida", "<", 'Final malo', [3, None])
-        ]
-    
-    return decisions
-
-
-def CheckCondition(way:ActionChain, decision:Decision):
-    i = 0
-    decision_taked = False
-    for operator in decision.option.split(','):
-        while decision.points[i] is None:
-            i += 1
-        
-        if ConditionIsRight(way.get_points_as_list()[i], operator, decision.points[i]):
-            way.take_decision(decision, False)
-            decision_taked = True
-        i += 1
-
-    return decision_taked
-
-
-def ConditionIsRight(left, operator, right):
-    result = False
-    if right is not None:
-        if operator == '<':
-            if left < right:
-                result = True
-        if operator == '<=':
-            if left <= right:
-                result = True
-        if operator == '>':
-            if left > right:
-                result = True
-        if operator == '>=':
-            if left >= right:
-                result = True
-        if operator == '=':
-            if left == right:
-                result = True
-    return result
 
 if __name__ == '__main__':
     run()

@@ -1,20 +1,20 @@
-id;type;name;option;comment;amistad;calificación
-1;D;¿qué hacer?;nada;;1;
-2;D;¿qué hacer?;atacar;;;1
+id;type;name;option;comment;dependency;amistad;calificación
+1;D;¿qué hacer?;nada;;;1;
+2;D;¿qué hacer?;atacar;;;;1
 3;D;¿a quien le das el pescado?;A Kat;;;;
-4;D;¿a quien le das el pescado?;a Liz'Amar;;4;
-5;D;Con Liz'Amar solos en la habitación de Berto;Pasar el rato con ella;follan;2;-2
-6;D;Con Liz'Amar solos en la habitación de Berto;Salir a entrenar;No follan;-2;2
+4;D;¿a quien le das el pescado?;a Liz'Amar;;;4;
+5;D;Con Liz'Amar solos en la habitación de Berto;Pasar el rato con ella;follan;;2;-2
+6;D;Con Liz'Amar solos en la habitación de Berto;Salir a entrenar;No follan;;-2;2
 7;D;Mark'Zarog te pide que lo ayudes con Ámber;Ayudarlo;;;;
-8;D;Mark'Zarog te pide que lo ayudes con Ámber;Negarte;;;1
-9;D;¿a quién invitar a salir?;Ámber;;;;
-10;D;¿a quién invitar a salir?;Kat;;2;
-11;D;¿a quién invitar a salir?;Instructor;;;2
-12;D;¿a quién invitar a salir?;Mark'Zarog;;;;
-13;C;Le diste el pescado a Kat;3;Te follas a Kat;;
+8;D;Mark'Zarog te pide que lo ayudes con Ámber;Negarte;;;;1
+9;D;¿a quién invitar a salir?;Ámber;;5;;
+10;D;¿a quién invitar a salir?;Kat;;5;2;
+11;D;¿a quién invitar a salir?;Instructor;;5;;2
+12;D;¿a quién invitar a salir?;Mark'Zarog;;5;;
+13;C;Le diste el pescado a Kat;3;Te follas a Kat;;;
 14;C;Le diste el pescado a Liz'Amar;4;Follan;;;
-15;I;El jefe te interrumpe;>=;Ficha del jefe desbloqueada;;3
-16;I;El jefe te interrumpe;<;Sales a entrenar;;3
-17;ED-good;Te quedas con la chica;>=;Final bueno;4;
-18;ED-neutral;La chica te rechaza pero siguen siendo amigos;=;Final neutral;3;
-19;ED-bad;El prota se suicida;<;Final malo;3;
+15;I;El jefe te interrumpe;>=;Ficha del jefe desbloqueada;;;3
+16;I;El jefe te interrumpe;<;Sales a entrenar;;;3
+17;ED-good;Te quedas con la chica;>=;Final bueno;;4;
+18;ED-neutral;La chica te rechaza pero siguen siendo amigos;=;Final neutral;;3;
+19;ED-bad;El prota se suicida;<;Final malo;;3;
