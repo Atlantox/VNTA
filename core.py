@@ -2,6 +2,7 @@ from ActionChain import ActionChain
 from Decision import Decision
 
 def GetFileNameAndFormat(path:str):
+    ''' Get a file path and returns the file name without format, and the file format '''
     fileFullName = path.split('/')[-1]  # File name with format
     splits = fileFullName.split('.')
     fileFormat = '.' + splits[-1]
@@ -14,7 +15,7 @@ def GetFileNameAndFormat(path:str):
 
 
 def ReadDecisions(filePath):
-    ''' Return all decisions in the specified file and the novel points '''
+    ''' Return all decisions in the specified .csv file and the novel points '''
     decisions = []
     with open(filePath, 'r', encoding='utf-8') as f:
         lines = f.readlines()
@@ -51,6 +52,10 @@ def ReadDecisions(filePath):
 
 
 def CheckCondition(way:ActionChain, decision:Decision):
+    '''
+    Get a conditional Decision and an ActionChain
+    Return True if the Decision was taked, otherwise return False
+    '''
     i = 0
     decision_taked = False
     for operator in decision.option.split(','):
@@ -66,6 +71,7 @@ def CheckCondition(way:ActionChain, decision:Decision):
 
 
 def ConditionIsRight(left, operator, right):
+    ''' Return True if (left operator right), otherwise return False'''
     result = False
     if right is not None:
         if operator == '<':
@@ -86,7 +92,8 @@ def ConditionIsRight(left, operator, right):
     return result
 
 
-def GetSortedActionChain(ways:list[Decision]):
+def GetSortedActionChain(ways:list[ActionChain]):
+    ''' Gets a list of ActionChain and returns it sorted by id '''
     decisions = {}
     sortedDecisions = []
     for way in ways:
@@ -98,3 +105,11 @@ def GetSortedActionChain(ways:list[Decision]):
         sortedDecisions.append(decisions[d])
 
     return sortedDecisions
+
+def GetEndingStatistics(endings:dict, roads:int):
+    ''' Return a string with statistics of endings given '''
+    result = 'Endings statistics\n'
+    for key, value in endings.items():
+        percent = (value * 100) / roads
+        result += f'   {key}: {value} -> {percent}% -> {percent / 100} \n'
+    return result

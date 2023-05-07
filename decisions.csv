@@ -11,10 +11,11 @@ id;type;name;option;comment;dependency;amistad;calificación
 10;D;¿a quién invitar a salir?;Kat;;5;2;
 11;D;¿a quién invitar a salir?;Instructor;;5;;2
 12;D;¿a quién invitar a salir?;Mark'Zarog;;5;;
-13;C;Le diste el pescado a Kat;3;Te follas a Kat;;;
-14;C;Le diste el pescado a Liz'Amar;4;Follan;;;
-15;I;El jefe te interrumpe;>=;Ficha del jefe desbloqueada;;;3
-16;I;El jefe te interrumpe;<;Sales a entrenar;;;3
-17;ED-good;Te quedas con la chica;>=;Final bueno;;4;
-18;ED-neutral;La chica te rechaza pero siguen siendo amigos;=;Final neutral;;3;
-19;ED-bad;El prota se suicida;<;Final malo;;3;
+13;I;Prueba final;>=;Pasas la prueba final;;;3
+14;ED-expulsado;Prueba final;<;Repruebas la prueba final;;;0
+15;C;Le diste el pescado a Kat;;Te follas a Kat;3;;
+16;C;Le diste el pescado a Liz'Amar;;Follan;4;;
+17;I;El jefe te interrumpe;>=;Ficha del jefe desbloqueada;;;3
+18;I;El jefe te interrumpe;<;Sales a entrenar;;;3
+19;ED-good;Te quedas con la chica;>=;Final bueno;;3;
+20;ED-bad;El prota se suicida;<;Final malo;;3;
