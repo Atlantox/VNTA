@@ -106,6 +106,7 @@ def GetSortedActionChain(ways:list[ActionChain]):
 
     return sortedDecisions
 
+
 def GetEndingStatistics(endings:dict, roads:int):
     ''' Return a string with statistics of endings given '''
     result = 'Endings statistics\n'
@@ -113,3 +114,4 @@ def GetEndingStatistics(endings:dict, roads:int):
         percent = (value * 100) / roads
         result += f'   {key}: {value} -> {percent}% -> {percent / 100} \n'
     return result
+

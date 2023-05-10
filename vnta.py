@@ -179,6 +179,7 @@ def DisplayMenu():
     space = '#' * (halfs['H'] - halfs['A'])
     print(space + Atlantox + space)
     print('#' * len(header))
+
     while True:
         print('''
         [1]: Display endings statistics.
@@ -221,7 +222,30 @@ def DisplayAllRoads():
 
 def DisplaySearch():
     ''' Displays the search submenu (search by code and novel points) '''
-    pass
+    # Search by code
+    # Search by points1
+    # Search by points1
+    # Search by ending
+    commands = {
+        '1': DisplaySearchByCode,
+        '2': DisplaySearchByPoints,
+        '3': DisplaySearchByEnding
+    }
+    while True:
+        print('''
+        [1]: Search by code
+        [2]: Search by points 
+        [3]: Search by ending
+        [0]: Exit.
+            ''')
+        com = input('Select the search type: ').strip()
+
+        if com in commands:
+            commands[com]()
+        elif com == '0':
+            break
+        else:
+            print('Wrong command, please select a valid option')
 
 
 def DisplaySearchByCode():
@@ -240,6 +264,8 @@ def DisplaySearchByCode():
                 search_endings[way.finished] += 1
 
     if results != []:
+        if len(results) == 1:
+            print(results[0].summary(3))
         for way in results:
             print(way)
         
@@ -251,8 +277,93 @@ def DisplaySearchByCode():
 
 
 def DisplaySearchByPoints():
-    ''' Search for roads by a specific condition '''
-    pass
+    ''' Search for roads by a specific novel points condition '''
+
+    while True:
+        print(f'''
+        The novel points are: {novel_points}
+        Please insert the search condition following this example format:
+        {novel_points[0]} >= 5
+        So you can use <,>,>=,<=, = operators
+        To do a multiple condition search, separate the conditions by commas
+        {novel_points[0]} >= 0, {novel_points[0]} < 10
+
+        [0]: Return
+        ''')
+
+        search = input('Insert the search condition: ').strip()
+
+        if search == '0': break
+
+        try:
+            results = []
+            conditions = search.split(',')
+            for way in all_ways:
+                conditionOK = True
+                for condition in conditions:
+                    point, operator, value = condition.strip().split(' ')
+                    currentPoint = int(way.points[point])
+                    if not ConditionIsRight(currentPoint, operator, int(value)):
+                        conditionOK = False
+                        break
+
+                if conditionOK:
+                    results.append(way)
+
+            if len(results) == 0:
+                print('Not results found')
+            else:
+                for way in results:
+                    print(way)
+
+            break
+        except:
+            print('Invalid condition')
+
+
+
+def DisplaySearchByEnding():
+    ''' Search for all roads of a specific ending type '''
+    options = ''
+    i = 1
+    for ed in endings:
+        options += f'        [{i}]: {ed}\n'
+        i+=1
+    options += '        [0]: Return'
+
+    while True:
+        print(f'''
+        the endings are: {endings.keys()}
+        Select a ending to show all roads with that ending
+        Separate by commas to do a multiple search
+        ''')
+        print(options)
+
+        com = input('Insert the ending(s) for the search: ').strip()
+
+        if com == '0': break
+
+        results = []
+        ids = [int(id.strip()) for id in com.split(',')]
+        eds = [list(endings.keys())[ed - 1] for ed in ids if ed in range(1, i)]
+        if eds == []:
+            print('Invalid endings')
+            continue
+
+        for way in all_ways:
+            if way.finished is None: continue
+
+            if way.finished in eds:
+                results.append(way)
+
+
+        if len(results) == 0:
+            print('Not results found')
+        else:
+            for way in results:
+                print(way)
+
+        break
 
 
 if __name__ == '__main__':
