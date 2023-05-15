@@ -1,5 +1,5 @@
-from ActionChain import ActionChain
-from Decision import Decision
+from core.ActionChain import ActionChain
+from core.Decision import Decision
 
 def GetFileNameAndFormat(path:str):
     ''' Get a file path and returns the file name without format, and the file format '''

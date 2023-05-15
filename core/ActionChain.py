@@ -1,4 +1,4 @@
-from Decision import Decision
+from core.Decision import Decision
 
 class ActionChain:
     def __init__(self, decisions:list[Decision], points:list|dict):
