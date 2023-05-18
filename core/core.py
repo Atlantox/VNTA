@@ -126,6 +126,7 @@ def LoadDecisionsTree():
     for w in data['all_ways']: all_ways.append(w)
     for p in data['novel_points']: novel_points.append(p)
     for e, v in data['endings'].items(): endings[e] = v
+    for d in data['all_decisions']: all_decisions.append(d)
     print('Decision tree successfully loaded')
 
     #DisplayMenu()
@@ -141,6 +142,7 @@ def SaveDataInFile():
     file = open(new_path, 'wb')
     to_save = {
         'all_ways': all_ways,
+        'all_decisions': all_decisions,
         'novel_points': novel_points,
         'endings': endings
     }

@@ -109,9 +109,16 @@ def GetSortedActionChain(ways:list[ActionChain]):
 
 def GetEndingStatistics(endings:dict, roads:int):
     ''' Return a string with statistics of endings given '''
-    result = 'Endings statistics\n'
+    #result = 'Endings statistics\n'
+    result = {}
     for key, value in endings.items():
         percent = (value * 100) / roads
-        result += f'   {key}: {value} -> {percent}% -> {percent / 100} \n'
+        to_add = {
+            'count': value,
+            'percent': percent,
+            'index': percent / 100
+        }
+        result[key] = to_add
+        #result += f'   {key}: {value} ··· {percent}% ··· {percent / 100} \n'
     return result
 
