@@ -369,6 +369,48 @@ def DisplaySearchByEnding():
 
         break
 
+def GetRoadsBySearch(search_type:str, search:str):
+    results = []
+    if search_type == 'Code':
+        codes = [s.strip() for s in search.split(',') if s != '']
+
+        for way in all_ways:
+            coincidance = True
+            for code in codes:
+                
+                if code not in str(way):
+                    coincidance = False
+                    break
+
+            if coincidance: results.append(way)     
+
+    elif search_type == 'Ending':
+        criterions = [s.strip() for s in search.split(',') if s != '']
+
+        for way in all_ways:
+            if way.finished is None:
+                continue
+            if way.finished in criterions:
+                results.append(way)
+
+    elif search_type == 'Points':
+        conditions = search.split(',')
+        for way in all_ways:
+            conditionOK = True
+            for condition in conditions:
+                point, operator, value = condition.strip().split(' ')
+                currentPoint = int(way.points[point])
+                if not ConditionIsRight(currentPoint, operator, int(value)):
+                    conditionOK = False
+                    break
+
+            if conditionOK:
+                results.append(way)
+
+    if len(results) == 0:
+        results = None
+
+    return results
 
 #if __name__ == '__main__':
     #run()

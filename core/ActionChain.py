@@ -61,9 +61,9 @@ class ActionChain:
         return result
 
     def get_str_points(self):
-        points = '|  '
+        points = '   |||      '
         for k,v in self.points.items():
-            points += f'{k}:{v}  '
+            points += f'{k}: ({v})  '
         return points
 
     def copy(self):
