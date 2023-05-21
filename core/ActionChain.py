@@ -100,10 +100,14 @@ class ActionChain:
             #  Finished ActionChains can't take more decisions
             return False
 
-        if decision.dependency is not None and decision.dependency not in self.idList:
+        if decision.dependencies is not None:
             #  If the decision depends of an previous decision that wasn't taked
             #  the ActionChain can't take that decision
-            return False
+            for dependency in decision.dependencies:
+                if dependency not in self.idList:
+                    return False
+
+
 
         return True
 

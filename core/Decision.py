@@ -12,14 +12,20 @@
 # 103;BE;El prota se suicida;<;Final malo;8;
 
 class Decision:
-    def __init__(self, id, type, name, option, dependency, comment, points):
+    def __init__(self, id, type, name, option, dependencies, comment, points):
         self.id = id
         self.type = type
         self.name = name
         self.option = option
-        self.dependency = dependency
+        self.dependencies = dependencies
         self.comment = comment
         self.points = points
 
     def __str__(self):
-        return f'{self.id}-{self.name}'
+        return self.summary()
+    
+    def summary(self, deep_level:int=0):
+        if deep_level == 0:
+            return f'{self.id} || {self.name}'
+        if deep_level == 1:
+            return f'{self.id} || {self.name} ||| {self.option} ||| {self.dependencies} ||| {self.points}'

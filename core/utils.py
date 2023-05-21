@@ -34,6 +34,12 @@ def ReadDecisions(filePath):
                 split = None
             to_add.append(split)
 
+        if to_add[5] is not None:
+            # If the decision has dependency, convert the stirng into a list
+            dependencies = [s.strip() for s in to_add[5].split(',') if s != '']
+            to_add[5] = dependencies
+            
+
         points = []
         for split in splits[6:]:
             points.append(None) if split == '' else points.append(int(split)) 
@@ -44,7 +50,7 @@ def ReadDecisions(filePath):
             name=to_add[2],
             option=to_add[3],
             comment=to_add[4],
-            dependency=to_add[5],
+            dependencies=to_add[5],
             points=points,
         ))
         

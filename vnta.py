@@ -24,14 +24,19 @@ search_filter = StringVar()
 TITLES = {
     'main': 'Select an option',
     'summary': "Summary of your novel's decisions",
-    'search': 'Search between the roads',
+    'roads': 'Search between the roads',
     'decisions': "Search between your novel's decisions"
 }
 
 SEARCH_EXAMPLES = {
-    'Code': 'Simple: -1-3-4-\nMultiple: -1-, -27-, -36-',
-    'Ending': 'Simple: good\nMultiple: bad, neutral, other',
-    'Points': 'Simple: friendship >= 5\nMultiple: friendship > 8, friendship <= 11, strength > 5\nRespect the blank spaces'
+    'roads-code': 'Simple: -1-3-4-\nMultiple: -1-, -27-, -36-',
+    'roads-ending': 'Simple: good\nMultiple: bad, neutral, other',
+    'roads-points': 'Simple: friendship >= 5\nMultiple: friendship > 8, friendship <= 11, strength > 5\nRespect the blank spaces',
+    'decisions-id': 'Simple: 8\nMultiple: 4, 6, 8, 21',
+    'decisions-name': 'Simple: Please just for this time\nMultiple: Do you love me?, Are you sure of this?\nBecareful with caps',
+    'decisions-option': 'Simple: Comfort Misha\nMultiple: Talk to her, Leave her\nBecareful with caps',
+    'decisions-dependency': 'Simple: 4\nMultiple: 8, 12, 54\nRemember that dependency field aim to a decision id',
+    'decisions-points': 'Simple: Friendship\nMultiple: Strength, Health\nShow all decisions that affect the selected point',
 }
 
 #  Functions
@@ -95,54 +100,121 @@ def OpenAnalyticsWindow():
             i += 1
      
 
-    def show_search_menu():
+    def show_search_menu(context:str):
         clear_menu()
-        search_filter.set('Code')
-        option_select.config(text=TITLES['search'])
 
+        if context == 'roads':
+            search_filter.set('code')
+        elif context == 'decisions':
+            search_filter.set('id')
+
+        example_key = (context + '-' + search_filter.get()).lower()
+
+        option_select.config(text=TITLES[context])
+
+        def get_example_key():
+            return (context + '-' + search_filter.get()).lower()
 
         def change_example():
-            example_value.config(text=SEARCH_EXAMPLES[search_filter.get()])
+            example_value.config(text=SEARCH_EXAMPLES[get_example_key()])
 
-        def do_search():
-            results = GetRoadsBySearch(search_filter.get(), search_entry.get())
+        def do_search(search_target:str):
+            if search_target == 'roads':
+                # Getting the results
+                results = GetRoadsBySearch(search_filter.get(), search_entry.get())
+            elif search_target == 'decisions':
+                # Getting the results
+                results = GetDecisionsBySearch(search_filter.get(), search_entry.get())
+
             decisionList.delete(0, END)
+
             if results is None:
                 decisionList.insert(0, 'Not results found')
             else:
-                for i, way in enumerate(results):
-                    decisionList.insert(i, way.summary(1))
+                for i, result in enumerate(results):
+                    decisionList.insert(i, result.summary(1))
 
                 results_found.config(text=f'Resuls found: {len(results)}')
-                results_percent.config(text=f'Percent: {(len(results) * 100) / len(all_ways)}%')
+
+                percent = len(results) * 100
+                if search_target == 'roads':
+                    percent /= len(all_ways)
+                elif search_target == 'decisions':
+                    percent /= len(all_decisions)
+
+                results_percent.config(text=f'Percent: {percent}%')
+
+        def get_radio_buttons(context:str) -> list[Radiobutton]:
+            if context == 'roads':
+                return [
+                    Radiobutton(radio_container, text='Code', value='code', 
+                                variable=search_filter, bg=MY_BACKGROUND, 
+                                activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, 
+                                font=(MY_FONT, 12), fg='white', command=change_example),
+
+                    Radiobutton(radio_container, text='Ending', value='ending', 
+                                variable=search_filter, bg=MY_BACKGROUND, 
+                                activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, 
+                                font=(MY_FONT, 12), fg='white', command=change_example),
+
+                    Radiobutton(radio_container, text='Points', value='points', 
+                                variable=search_filter, bg=MY_BACKGROUND, 
+                                activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, 
+                                font=(MY_FONT, 12), fg='white', command=change_example)
+                ]
+            elif context == 'decisions':
+                return [
+                    Radiobutton(radio_container, text='Id', value='id', 
+                                variable=search_filter, bg=MY_BACKGROUND, 
+                                activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, 
+                                font=(MY_FONT, 12), fg='white', command=change_example),
+                    
+                    Radiobutton(radio_container, text='Name', value='name', 
+                                variable=search_filter, bg=MY_BACKGROUND, 
+                                activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, 
+                                font=(MY_FONT, 12), fg='white', command=change_example),
+
+                    Radiobutton(radio_container, text='Option', value='option', 
+                                variable=search_filter, bg=MY_BACKGROUND, 
+                                activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, 
+                                font=(MY_FONT, 12), fg='white', command=change_example),
+
+                    Radiobutton(radio_container, text='Dependency', value='dependency', 
+                                variable=search_filter, bg=MY_BACKGROUND, 
+                                activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, 
+                                font=(MY_FONT, 12), fg='white', command=change_example),
+
+                    Radiobutton(radio_container, text='Points', value='points', 
+                                variable=search_filter, bg=MY_BACKGROUND, 
+                                activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, 
+                                font=(MY_FONT, 12), fg='white', command=change_example)        
+                ]
 
 
         search_entry = Entry(menu_side,)
         radio_container = Frame(menu_side, bg=MY_BACKGROUND)
         labelFrame = LabelFrame(menu_side, text='Search examples', bg=MY_BACKGROUND, font=(MY_FONT, 15), fg='white')
-        search_buttton = Button(menu_side, text='Search', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white', command=do_search)
-        code_filter = Radiobutton(radio_container, text='Code', value='Code', variable=search_filter, bg=MY_BACKGROUND, 
-                                  activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, font=(MY_FONT, 12), fg='white', command=change_example)
-        ending_filter = Radiobutton(radio_container, text='Ending', value='Ending', variable=search_filter, bg=MY_BACKGROUND, 
-                                    activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, font=(MY_FONT, 12), fg='white', command=change_example)
-        points_filter = Radiobutton(radio_container, text='Points', value='Points', variable=search_filter, bg=MY_BACKGROUND, 
-                                    activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, font=(MY_FONT, 12), fg='white', command=change_example)
-        example_value = Label(labelFrame, text=SEARCH_EXAMPLES[search_filter.get()], background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', justify='left')
+        search_buttton = Button(menu_side, text='Search', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white', command=lambda:do_search(context))
+
+        radio_buttons = get_radio_buttons(context)
+
+        example_value = Label(labelFrame, text=SEARCH_EXAMPLES[get_example_key()], background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', justify='left')
         decisionList = Listbox(menu_side)
         results_found = Label(menu_side, text='', background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', justify='left')
         results_percent = Label(menu_side, text='', background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', justify='left')
 
-        search_entry.bind('<Return>', lambda event: do_search())
-
-        #for i, way in enumerate(all_ways):
-            #decisionList.insert(i + 1, way.summary(1))
+        search_entry.bind('<Return>', lambda event: do_search(context))
 
         search_entry.grid(column=0, row=1, sticky='ew', padx=15, columnspan=3)
         search_buttton.grid(column=3, row=1, sticky='ew')
         radio_container.grid(column=0, row=2, columnspan=99)
-        code_filter.grid(column=0, row=0, sticky='ew', padx=5)
-        ending_filter.grid(column=1, row=0, sticky='ew', padx=5)
-        points_filter.grid(column=2, row=0, sticky='ew', padx=5)
+
+        for i, rb in enumerate(radio_buttons):
+            # Placing the radio buttons
+            rb.grid(column=i, row=0, sticky='ew', padx=5)
+
+        
+
         labelFrame.grid(column=0, row=3, pady=15, padx=30, sticky='ew', columnspan=99)
         example_value.grid(column=1, row=3, pady=10, padx=20)
         decisionList.grid(column=0, row=4, sticky='ew', columnspan=99, pady=25, padx=5)
@@ -161,8 +233,8 @@ def OpenAnalyticsWindow():
     right_side = Frame(mainWindow, background=MY_BACKGROUND)
     menu_side = Frame(right_side, background=MY_BACKGROUND, width=500, height=500)
     summary_select = Button(options_container, text='Summary', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white', command=show_summary)
-    search_select = Button(options_container, text='Search', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white', command=show_search_menu)
-    decisions_select = Button(options_container, text='Decisions', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white')
+    search_select = Button(options_container, text='Search', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white', command=lambda:show_search_menu('roads'))
+    decisions_select = Button(options_container, text='Decisions', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white', command=lambda:show_search_menu('decisions'))
     option_select = Label(menu_side, text=TITLES['main'], background=MY_BACKGROUND, font=(MY_FONT, 20), fg='white', justify='center')
 
 

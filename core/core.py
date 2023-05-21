@@ -371,7 +371,7 @@ def DisplaySearchByEnding():
 
 def GetRoadsBySearch(search_type:str, search:str):
     results = []
-    if search_type == 'Code':
+    if search_type == 'code':
         codes = [s.strip() for s in search.split(',') if s != '']
 
         for way in all_ways:
@@ -384,7 +384,7 @@ def GetRoadsBySearch(search_type:str, search:str):
 
             if coincidance: results.append(way)     
 
-    elif search_type == 'Ending':
+    elif search_type == 'ending':
         criterions = [s.strip() for s in search.split(',') if s != '']
 
         for way in all_ways:
@@ -393,7 +393,7 @@ def GetRoadsBySearch(search_type:str, search:str):
             if way.finished in criterions:
                 results.append(way)
 
-    elif search_type == 'Points':
+    elif search_type == 'points':
         conditions = search.split(',')
         for way in all_ways:
             conditionOK = True
@@ -411,6 +411,66 @@ def GetRoadsBySearch(search_type:str, search:str):
         results = None
 
     return results
+
+
+def GetDecisionsBySearch(search_type:str, search:str = ''):
+    if search == '*':
+        return all_decisions
+
+    results = []
+    items = [v.strip() for v in search.split(',') if v != '']
+    if search_type == 'id':
+        for d in all_decisions:
+            if d.id in items: results.append(d)                
+
+    elif search_type == 'name':
+        for d in all_decisions:
+            for name in items:
+                if name in d.name:
+                    results.append(d)
+                    break
+                
+    elif search_type == 'option':
+        for d in all_decisions:
+            for option in items:
+                if d.option is not None:
+                    if option in d.option:
+                        results.append(d)
+                        break
+
+    elif search_type == 'dependency':
+        for d in all_decisions:
+            for dependency in items:
+                if d.dependencies is not None:
+                    if dependency in d.dependencies:
+                        results.append(d)
+                        break
+
+    elif search_type == 'points':
+        indexes = []
+        for point in items:
+            for i, real_point in enumerate(novel_points):
+                if point == real_point: 
+                    indexes.append(i)
+                    break
+
+        if indexes != []:
+            for d in all_decisions:
+                pointOK = True
+                # Checking if decision affects targets points
+                for index in indexes:
+                    if d.points[index] is None:
+                        pointOK = False
+                        break
+
+                if pointOK:
+                    results.append(d)
+
+
+    if results == []: results = None
+
+    return results
+
 
 #if __name__ == '__main__':
     #run()
