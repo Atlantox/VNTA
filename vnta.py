@@ -23,7 +23,7 @@ search_filter = StringVar()
 
 TITLES = {
     'main': 'Select an option',
-    'summary': "Summary of your novel's decisions",
+    'summary': "Summary of all possible roads",
     'roads': 'Search between the roads',
     'decisions': "Search between your novel's decisions"
 }
@@ -122,6 +122,7 @@ def OpenAnalyticsWindow():
             if search_target == 'roads':
                 # Getting the results
                 results = GetRoadsBySearch(search_filter.get(), search_entry.get())
+                results = GetSortedActionChain(results)
             elif search_target == 'decisions':
                 # Getting the results
                 results = GetDecisionsBySearch(search_filter.get(), search_entry.get())
@@ -131,6 +132,7 @@ def OpenAnalyticsWindow():
             if results is None:
                 decisionList.insert(0, 'Not results found')
             else:
+                
                 for i, result in enumerate(results):
                     decisionList.insert(i, result.summary(1))
 
@@ -231,7 +233,7 @@ def OpenAnalyticsWindow():
     options_container = Frame(left_side, background=MY_BACKGROUND, width=100, height=500)
     left_border = Frame(left_side, bg='white', width=1)    
     right_side = Frame(mainWindow, background=MY_BACKGROUND)
-    menu_side = Frame(right_side, background=MY_BACKGROUND, width=500, height=500)
+    menu_side = Frame(right_side, background=MY_BACKGROUND, width=800, height=500)
     summary_select = Button(options_container, text='Summary', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white', command=show_summary)
     search_select = Button(options_container, text='Search', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white', command=lambda:show_search_menu('roads'))
     decisions_select = Button(options_container, text='Decisions', bg=MY_BACKGROUND, font=(MY_FONT, 10), fg='white', command=lambda:show_search_menu('decisions'))
@@ -261,6 +263,9 @@ def OpenAnalyticsWindow():
     
 
 def create_or_load_decision_tree():
+    ''' Creates or load the decision tree '''
+
+    global all_decisions 
     file_path.set(filedialog.askopenfilename(
         initialdir='.',
         title='Select your .csv or .vnta decisions file',
@@ -269,16 +274,18 @@ def create_or_load_decision_tree():
         )
     ))
 
-    format = file_path.get()[-5:]
-    
-    if '.csv' in format:
-        browse_info.config(text='Creating decision tree...')
-    if '.vnta' in format:
-        browse_info.config(text='Loading decision tree...')
+    if file_path.get():
 
-    StartDecisionsTree(file_path.get())
-    
-    OpenAnalyticsWindow()   
+        format = file_path.get()[-5:]
+        
+        if '.csv' in format:
+            browse_info.config(text='Creating decision tree...')
+        if '.vnta' in format:
+            browse_info.config(text='Loading decision tree...')
+
+        all_decisions = StartDecisionsTree(file_path.get())
+        
+        OpenAnalyticsWindow()   
     
 
 #  Creating widgets

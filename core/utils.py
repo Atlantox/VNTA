@@ -21,7 +21,7 @@ def ReadDecisions(filePath):
         lines = f.readlines()
         f.close()
     
-    novel_points = [l.strip() for l in lines[0].split(';')[6:]]
+    novel_points = [l.strip() for l in lines[0].split(';')[5:]]
 
     for line in lines[1:]:
         if line.strip() == '':
@@ -29,19 +29,18 @@ def ReadDecisions(filePath):
 
         splits = [s.strip() for s in line.split(';')]
         to_add = []
-        for split in splits[:6]:
+        for split in splits[:5]:
             if split == '':
                 split = None
             to_add.append(split)
 
-        if to_add[5] is not None:
+        if to_add[4] is not None:
             # If the decision has dependency, convert the stirng into a list
-            dependencies = [s.strip() for s in to_add[5].split(',') if s != '']
-            to_add[5] = dependencies
-            
+            dependencies = [s.strip() for s in to_add[4].split(',') if s != '']
+            to_add[4] = dependencies            
 
         points = []
-        for split in splits[6:]:
+        for split in splits[5:]:
             points.append(None) if split == '' else points.append(int(split)) 
 
         decisions.append(Decision(
@@ -49,8 +48,7 @@ def ReadDecisions(filePath):
             type=to_add[1],
             name=to_add[2],
             option=to_add[3],
-            comment=to_add[4],
-            dependencies=to_add[5],
+            dependencies=to_add[4],
             points=points,
         ))
         
@@ -60,20 +58,20 @@ def ReadDecisions(filePath):
 def CheckCondition(way:ActionChain, decision:Decision):
     '''
     Get a conditional Decision and an ActionChain
-    Return True if the Decision was taked, otherwise return False
+    Return True if the Decision was taken, otherwise return False
     '''
     i = 0
-    decision_taked = False
+    decision_taken = False
     for operator in decision.option.split(','):
         while decision.points[i] is None:
             i += 1
         
         if ConditionIsRight(way.get_points_as_list()[i], operator, decision.points[i]):
             way.take_decision(decision, False)
-            decision_taked = True
+            decision_taken = True
         i += 1
 
-    return decision_taked
+    return decision_taken
 
 
 def ConditionIsRight(left, operator, right):
@@ -95,6 +93,7 @@ def ConditionIsRight(left, operator, right):
         if operator == '=':
             if left == right:
                 result = True
+
     return result
 
 
@@ -127,4 +126,3 @@ def GetEndingStatistics(endings:dict, roads:int):
         result[key] = to_add
         #result += f'   {key}: {value} ··· {percent}% ··· {percent / 100} \n'
     return result
-

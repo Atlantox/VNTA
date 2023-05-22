@@ -12,15 +12,22 @@ endings = {}  # Ending statistics
 
 
 def StartDecisionsTree(path):
+    ''' Create or load the decision tree if exists '''
     global all_decisions, novel_points, fileName, filePath, fileFormat
+    all_ways, all_decisions, novel_points = [], [], [] # Cleaning global variables
+    endings = {}
     filePath = path
     fileName, fileFormat = GetFileNameAndFormat(filePath)
 
     if fileFormat == '.csv':
         all_decisions, novel_points = ReadDecisions(filePath)
         CreateDecisionsTree()
+        return all_decisions
     elif fileFormat == '.vnta':
         LoadDecisionsTree()  
+        return all_decisions
+
+    
 
 
 def CreateDecisionsTree():
@@ -63,9 +70,9 @@ def CreateDecisionsTree():
 
 
         elif currentDecision.type == 'C':  # Consecuence
-            ''' Consecuence decision consist in a decision that happen depending of a previous decision taked '''
+            ''' Consecuence decision consist in a decision that happen depending of a previous decision taken '''
             if all_ways == []:
-                print(f'Consecuences needs a anterior decision in {currentDecision}')
+                print(f'Consecuences needs a previous decision in {currentDecision}')
             else:
                 for way in all_ways:
 
@@ -73,12 +80,6 @@ def CreateDecisionsTree():
                         continue
                     
                     way.take_decision(currentDecision)
-                    '''
-                    if '*-1-3-5-7-10-' in str(way):
-                        print('ESTA\n')
-                        print(currentDecision)
-                        print(way, '\n')
-                    '''
 
         elif currentDecision.type == 'I':   # If condition
             for way in all_ways:
@@ -87,12 +88,19 @@ def CreateDecisionsTree():
 
                 CheckCondition(way, currentDecision)
 
-        elif 'ED-' in currentDecision.type:  # Endings
+        elif 'E-' in currentDecision.type:  # Endings
             for way in all_ways:
+                available_to_take = False
                 if not way.decision_is_compatible(currentDecision):
-                    continue
+                    continue  # If not compatible, continue in the next way
                 
-                if CheckCondition(way, currentDecision):
+                if novel_points == []:
+                    available_to_take = True
+                else:
+                    if CheckCondition(way, currentDecision):
+                        available_to_take = True
+
+                if available_to_take:
                     endingType = currentDecision.type.split('-')[1]
                     way.finish(endingType)
                     try:
@@ -102,15 +110,36 @@ def CreateDecisionsTree():
                         
 
         else:
-            print(f'{currentDecision.id} decision has wrong type: {currentDecision.type}\nPlease use D, C, I or Ed-')
+            print(f'{currentDecision.id} decision has wrong type: {currentDecision.type}\nPlease use D, C, I or E-')
 
         crt_id += 1
 
     if fileFormat == '.csv':
-        save_path = SaveDataInFile()
+        save_path = SaveDecisionsTree()
 
     print('Decision tree successfully created and saved in:', save_path)
     #DisplayMenu()
+
+
+def SaveDecisionsTree():
+    '''
+    Once created the decision tree, it is saved in a file to prevent to create another equal decision tree 
+    Returns the path of the created .vnta file
+    '''
+    new_path = filePath.replace(fileName + fileFormat, fileName + '.vnta')
+    
+    file = open(new_path, 'wb')
+
+    to_save = {
+        'all_ways': all_ways.copy(),
+        'all_decisions': all_decisions.copy(),
+        'novel_points': novel_points.copy(),
+        'endings': endings.copy()
+    }
+
+    pickle.dump(to_save, file)
+    file.close()
+    return new_path
 
 
 def LoadDecisionsTree():
@@ -118,7 +147,7 @@ def LoadDecisionsTree():
     If a .vnta file is given, all data is loaded from that file
     This function is usefull when you have a really really big decision tree
     '''
-    print(filePath)
+
     file = open(filePath, 'rb')
     data = pickle.load(file)
     file.close()
@@ -127,28 +156,13 @@ def LoadDecisionsTree():
     for p in data['novel_points']: novel_points.append(p)
     for e, v in data['endings'].items(): endings[e] = v
     for d in data['all_decisions']: all_decisions.append(d)
-    print('Decision tree successfully loaded')
 
+
+    print('Decision tree successfully loaded')
     #DisplayMenu()
 
 
-def SaveDataInFile():
-    '''
-    Once created the decision tree, it is saved in a file to prevent to create another equal decision tree 
-    Returns the path of the created .vnta file
-    '''
-    new_path = filePath.replace(fileName + fileFormat, fileName + '.vnta')
-    
-    file = open(new_path, 'wb')
-    to_save = {
-        'all_ways': all_ways,
-        'all_decisions': all_decisions,
-        'novel_points': novel_points,
-        'endings': endings
-    }
-    pickle.dump(to_save, file)
-    file.close()
-    return new_path
+
 
 
 def GetRelatedDecisions(decision, crt_id):

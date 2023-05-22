@@ -1,0 +1,14 @@
+id;type;name;option;dependency
+1;D;¿qué hacer?;nada;
+2;D;¿qué hacer?;atacar;
+3;D;¿a quien le das el pescado?;A Kat;
+4;D;¿a quien le das el pescado?;a Liz'Amar;
+5;D;Con Liz'Amar solos en la habitación de Berto;Pasar el rato con ella;
+6;D;Con Liz'Amar solos en la habitación de Berto;Salir a entrenar;
+7;D;Mark'Zarog te pide que lo ayudes con Ámber;Ayudarlo;
+8;D;Mark'Zarog te pide que lo ayudes con Ámber;Negarte;
+9;D;¿a quién invitar a salir?;Ámber;
+10;D;¿a quién invitar a salir?;Kat;
+11;D;¿a quién invitar a salir?;Instructor;
+12;D;¿a quién invitar a salir?;Mark'Zarog;
+14;E-expulsado;Prueba final;;8
