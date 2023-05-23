@@ -12,8 +12,8 @@ endings = {}  # Ending statistics
 
 
 def StartDecisionsTree(path):
-    ''' Create or load the decision tree if exists '''
-    global all_decisions, novel_points, fileName, filePath, fileFormat
+    ''' Reset all the global variables and Create or load the decision tree if exists '''
+    global all_decisions, novel_points, fileName, filePath, fileFormat, all_ways, endings
     all_ways, all_decisions, novel_points = [], [], [] # Cleaning global variables
     endings = {}
     filePath = path
@@ -22,22 +22,23 @@ def StartDecisionsTree(path):
     if fileFormat == '.csv':
         all_decisions, novel_points = ReadDecisions(filePath)
         CreateDecisionsTree()
-        return all_decisions
+        return all_decisions, all_ways, endings
     elif fileFormat == '.vnta':
         LoadDecisionsTree()  
-        return all_decisions
-
-    
+        return all_decisions, all_ways, endings
 
 
 def CreateDecisionsTree():
+    '''
+    Each Decision branches the start point creating a tree of Decisions
+    '''
     crt_id = 0  # Current decision index
 
     while crt_id < len(all_decisions):
         currentDecision:Decision =  all_decisions[crt_id]
 
         if currentDecision.type == 'D':  # Decision
-            ''' A decision consist in a situation and several posible options '''
+            ''' A decision consist in a situation and several possible options '''
             related_decisions = GetRelatedDecisions(currentDecision, crt_id)            
 
             crt_id += len(related_decisions) - 1 # Skipping the related decisions for the while loop
@@ -47,6 +48,7 @@ def CreateDecisionsTree():
                 # We insert the first decision, the begin of all paths
                 for decision in related_decisions:                    
                     to_add = ActionChain([decision], novel_points).change_points(decision)
+                    # Creating a ACtionChain and setting the initial novel points
                     all_ways.append(to_add)
 
             else:
@@ -75,28 +77,37 @@ def CreateDecisionsTree():
                 print(f'Consecuences needs a previous decision in {currentDecision}')
             else:
                 for way in all_ways:
-
                     if not way.decision_is_compatible(currentDecision):
-                        continue
+                        continue  # If not compatible, continue in the next way
                     
                     way.take_decision(currentDecision)
 
         elif currentDecision.type == 'I':   # If condition
+            '''
+            An if condition Decision is taken only if the current road have the requeriments
+            The conditions are bassed in novel points
+            '''
             for way in all_ways:
                 if not way.decision_is_compatible(currentDecision):
-                        continue
+                        continue  # If not compatible, continue in the next way
 
                 CheckCondition(way, currentDecision)
 
         elif 'E-' in currentDecision.type:  # Endings
+            '''
+            An ending can depend of 2 things, by novel points and/or a previous Decision
+            if the road meets the condition, that road ends
+            '''
             for way in all_ways:
                 available_to_take = False
                 if not way.decision_is_compatible(currentDecision):
                     continue  # If not compatible, continue in the next way
                 
                 if novel_points == []:
+                    #  If the novel's decisions doesn't have points
                     available_to_take = True
                 else:
+                    #  If the novel's decisions have points, check the condition
                     if CheckCondition(way, currentDecision):
                         available_to_take = True
 
@@ -108,13 +119,18 @@ def CreateDecisionsTree():
                     except KeyError:
                         endings[endingType] = 1
                         
-
         else:
             print(f'{currentDecision.id} decision has wrong type: {currentDecision.type}\nPlease use D, C, I or E-')
 
         crt_id += 1
 
     if fileFormat == '.csv':
+        '''
+        In cases of you have a really big list of decisions, with a
+        really big list of possible roads, these roads, novel points and decisions
+        are saved in a .vnta file to save processor effort in the next time
+        .vnta files can be opened by the same program
+        '''
         save_path = SaveDecisionsTree()
 
     print('Decision tree successfully created and saved in:', save_path)
@@ -123,7 +139,8 @@ def CreateDecisionsTree():
 
 def SaveDecisionsTree():
     '''
-    Once created the decision tree, it is saved in a file to prevent to create another equal decision tree 
+    Once created the decision tree, it is saved in a file to prevent to create another equal decision tree
+    really useful if you have a really big list of decisions
     Returns the path of the created .vnta file
     '''
     new_path = filePath.replace(fileName + fileFormat, fileName + '.vnta')
@@ -147,7 +164,6 @@ def LoadDecisionsTree():
     If a .vnta file is given, all data is loaded from that file
     This function is usefull when you have a really really big decision tree
     '''
-
     file = open(filePath, 'rb')
     data = pickle.load(file)
     file.close()
@@ -157,16 +173,12 @@ def LoadDecisionsTree():
     for e, v in data['endings'].items(): endings[e] = v
     for d in data['all_decisions']: all_decisions.append(d)
 
-
     print('Decision tree successfully loaded')
     #DisplayMenu()
 
 
-
-
-
 def GetRelatedDecisions(decision, crt_id):
-    ''' Get a decision and all the next related decisions '''
+    ''' Get a decision and all the next decisions with same name '''
     i = 1
     related_decisions = [decision]
     while decision.name == all_decisions[crt_id + i].name:
@@ -479,7 +491,6 @@ def GetDecisionsBySearch(search_type:str, search:str = ''):
 
                 if pointOK:
                     results.append(d)
-
 
     if results == []: results = None
 

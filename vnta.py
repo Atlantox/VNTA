@@ -223,11 +223,6 @@ def OpenAnalyticsWindow():
         results_found.grid(column=0, row=5)
         results_percent.grid(column=1, row=5)
 
-        
-        
-        
-
-
 
     left_side = Frame(mainWindow, background=MY_BACKGROUND)
     options_container = Frame(left_side, background=MY_BACKGROUND, width=100, height=500)
@@ -260,12 +255,10 @@ def OpenAnalyticsWindow():
         options_container.columnconfigure(col, weight=1)
 
 
-    
-
 def create_or_load_decision_tree():
     ''' Creates or load the decision tree '''
 
-    global all_decisions 
+    global all_decisions, all_ways, endings
     file_path.set(filedialog.askopenfilename(
         initialdir='.',
         title='Select your .csv or .vnta decisions file',
@@ -283,7 +276,7 @@ def create_or_load_decision_tree():
         if '.vnta' in format:
             browse_info.config(text='Loading decision tree...')
 
-        all_decisions = StartDecisionsTree(file_path.get())
+        all_decisions, all_ways, endings = StartDecisionsTree(file_path.get())
         
         OpenAnalyticsWindow()   
     

@@ -28,8 +28,8 @@ class Decision:
     def summary(self, deep_level:int=0):
         ''' Between more big the deep_level, more details are displayed, by default 0 and max 2 '''
         if deep_level == 0:  # Display id and name
-            return f'{self.id} || {self.name}'
-        if deep_level == 1:  # Display id, type, name and option
-            return f'{self.id} || {self.type} || {self.name} ||| {self.option} |||'
+            return f'{self.id} || {self.name}'  
+        if deep_level == 1:  # Display id, name, option and points
+            return f'{self.id} || {self.name} ||| {self.option} ||| {self.points}'
         if deep_level == 2:  # Display id, type, name, option, dependencies and points
             return f'{self.id} || {self.type} || {self.name} ||| {self.option} ||| {self.dependencies} ||| {self.points}'

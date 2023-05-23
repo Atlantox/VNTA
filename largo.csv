@@ -14,7 +14,7 @@ id;type;name;option;dependency;amistad;calificación
 13;I;Prueba final;>=;;;3
 14;E-expulsado;Prueba final;<;;;0
 15;C;Le diste el pescado a Kat;;3;;
-16;C;Le diste el pescado a Liz'Amar;4;;
+16;C;Le diste el pescado a Liz'Amar;;4;;
 17;I;El jefe te interrumpe;>=;;;3
 18;I;El jefe te interrumpe;<;;;3
 19;E-good;Te quedas con la chica;>=;5;3;
