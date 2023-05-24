@@ -25,11 +25,24 @@ class Decision:
     def __str__(self):
         return self.summary()
     
-    def summary(self, deep_level:int=0):
+    def summary(self, deep_level:int=0, novel_points:list[str]=[]):
         ''' Between more big the deep_level, more details are displayed, by default 0 and max 2 '''
         if deep_level == 0:  # Display id and name
             return f'{self.id} || {self.name}'  
         if deep_level == 1:  # Display id, name, option and points
-            return f'{self.id} || {self.name} ||| {self.option} ||| {self.points}'
+            points = self.get_points_as_str(novel_points)
+            return f'{self.id} || {self.name} ||| {self.option} ||| {points}'
         if deep_level == 2:  # Display id, type, name, option, dependencies and points
-            return f'{self.id} || {self.type} || {self.name} ||| {self.option} ||| {self.dependencies} ||| {self.points}'
+            points = self.get_points_as_str(novel_points)
+            return f'{self.id} || {self.type} || {self.name} ||| {self.option} ||| {self.dependencies} ||| {points}'
+        
+    
+    def get_points_as_str(self, novel_points:list[str]):
+        result = ''
+        if novel_points == []:
+            return self.points
+        else:
+            for i in range(len(novel_points)):
+                result += f'{novel_points[i]}:  ({self.points[i]}) ||| '
+
+        return result

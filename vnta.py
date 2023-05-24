@@ -40,8 +40,6 @@ SEARCH_EXAMPLES = {
 }
 
 #  Functions
-
-
 def OpenAnalyticsWindow():
     ''' The main window where the user will do the basic commands '''
     mainWindow = Toplevel()
@@ -108,8 +106,6 @@ def OpenAnalyticsWindow():
         elif context == 'decisions':
             search_filter.set('id')
 
-        example_key = (context + '-' + search_filter.get()).lower()
-
         option_select.config(text=TITLES[context])
 
         def get_example_key():
@@ -132,9 +128,11 @@ def OpenAnalyticsWindow():
             if results is None:
                 decisionList.insert(0, 'Not results found')
             else:
-                
                 for i, result in enumerate(results):
-                    decisionList.insert(i, result.summary(1))
+                    if search_target == 'roads':
+                        decisionList.insert(i, result.summary(1))
+                    elif search_target == 'decisions':
+                        decisionList.insert(i, result.summary(1, novel_points))
 
                 results_found.config(text=f'Resuls found: {len(results)}')
 
@@ -258,12 +256,12 @@ def OpenAnalyticsWindow():
 def create_or_load_decision_tree():
     ''' Creates or load the decision tree '''
 
-    global all_decisions, all_ways, endings
+    global all_decisions, all_ways, endings, novel_points
     file_path.set(filedialog.askopenfilename(
         initialdir='.',
         title='Select your .csv or .vnta decisions file',
         filetypes=(
-            ('Decision tree', ('*.csv', '*.vnta')),
+            ('Decision tree', ('*.csv', '*.vnta', '*.xlsx')),
         )
     ))
 
@@ -276,7 +274,7 @@ def create_or_load_decision_tree():
         if '.vnta' in format:
             browse_info.config(text='Loading decision tree...')
 
-        all_decisions, all_ways, endings = StartDecisionsTree(file_path.get())
+        all_decisions, all_ways, endings, novel_points = StartDecisionsTree(file_path.get())
         
         OpenAnalyticsWindow()   
     
@@ -285,7 +283,6 @@ def create_or_load_decision_tree():
 title = Label(file_select_frame, text='Select your decisions file', font=(MY_FONT,20), background=MY_BACKGROUND, fg='white')
 browse_button = Button(file_select_frame, text='Search decisions file', bg='#404040', fg='white', command=create_or_load_decision_tree)
 browse_info = Label(file_select_frame, text='', font=(MY_FONT,20), background=MY_BACKGROUND, fg='white')
-
 
 
 #  Styling widgets

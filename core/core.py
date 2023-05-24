@@ -3,6 +3,7 @@ import pickle
 from core.utils import *
 
 
+AVAILABLE_FORMATS = ['.csv', '.xlsx']
 filePath = ''
 fileName = ''
 fileFormat = ''
@@ -19,13 +20,13 @@ def StartDecisionsTree(path):
     filePath = path
     fileName, fileFormat = GetFileNameAndFormat(filePath)
 
-    if fileFormat == '.csv':
-        all_decisions, novel_points = ReadDecisions(filePath)
+    if fileFormat in AVAILABLE_FORMATS:
+        all_decisions, novel_points = ReadDecisions(filePath, fileFormat)
         CreateDecisionsTree()
-        return all_decisions, all_ways, endings
     elif fileFormat == '.vnta':
         LoadDecisionsTree()  
-        return all_decisions, all_ways, endings
+
+    return all_decisions, all_ways, endings, novel_points
 
 
 def CreateDecisionsTree():
@@ -124,7 +125,7 @@ def CreateDecisionsTree():
 
         crt_id += 1
 
-    if fileFormat == '.csv':
+    if fileFormat in AVAILABLE_FORMATS:
         '''
         In cases of you have a really big list of decisions, with a
         really big list of possible roads, these roads, novel points and decisions
@@ -134,7 +135,6 @@ def CreateDecisionsTree():
         save_path = SaveDecisionsTree()
 
     print('Decision tree successfully created and saved in:', save_path)
-    #DisplayMenu()
 
 
 def SaveDecisionsTree():
@@ -174,7 +174,6 @@ def LoadDecisionsTree():
     for d in data['all_decisions']: all_decisions.append(d)
 
     print('Decision tree successfully loaded')
-    #DisplayMenu()
 
 
 def GetRelatedDecisions(decision, crt_id):
@@ -187,256 +186,6 @@ def GetRelatedDecisions(decision, crt_id):
         if crt_id + i >= len(all_decisions): break
     
     return related_decisions
-
-
-def DisplayMenu():
-    ''' Shows a menu to get useful data about the decision tree '''
-
-    commands = {
-        '1': DisplayTotals,
-        '2': DisplayAllRoads,
-        '3': DisplaySearch
-    }
-
-    header = '#########    [V]isual  [N]ovel  [T]echnical  [A]ssistant    #########'
-    Atlantox = '- By Atlantox -'
-    print('#' * len(header))
-    print(header)
-    halfs = {
-        'A': int(len(Atlantox) / 2),
-        'H': int(len(header) / 2)
-        }
-    space = '#' * (halfs['H'] - halfs['A'])
-    print(space + Atlantox + space)
-    print('#' * len(header))
-
-    while True:
-        print('''
-        [1]: Display endings statistics.
-        [2]: Display all posible roads.
-        [3]: Search road.
-        [0]: Exit.
-        ''')
-        com = input('Select the command you want to execute: ').strip()
-
-        if com in commands.keys():
-            commands[com]()
-        else:
-            if com == '0': break
-
-            print('Wrong command')
-
-
-def DisplayTotals():
-    ''' Show road number and percents of each ending '''
-    global all_ways
-    all_ways = GetSortedActionChain(all_ways)
-
-    print('Total ways:', len(all_ways))
-
-    totals = GetEndingStatistics(endings, len(all_ways))
-
-    if 'good' in endings.keys():
-        prob = (endings['good'] * 100) / len(all_ways)
-        totals += f'\nGood ending probability: {prob}%\nNot-good ending probability: {100 - prob}%'
-
-    print(totals)
-
-
-def DisplayAllRoads():
-    ''' Display all roads showing code, ending and novel points of each one '''
-    for way in all_ways:
-        print(way.summary(1))
-    print('\n')
-
-
-def DisplaySearch():
-    ''' Displays the search submenu (search by code and novel points) '''
-    # Search by code
-    # Search by points1
-    # Search by points1
-    # Search by ending
-    commands = {
-        '1': DisplaySearchByCode,
-        '2': DisplaySearchByPoints,
-        '3': DisplaySearchByEnding
-    }
-    while True:
-        print('''
-        [1]: Search by code
-        [2]: Search by points 
-        [3]: Search by ending
-        [0]: Exit.
-            ''')
-        com = input('Select the search type: ').strip()
-
-        if com in commands:
-            commands[com]()
-        elif com == '0':
-            break
-        else:
-            print('Wrong command, please select a valid option')
-
-
-def DisplaySearchByCode():
-    ''' Search for roads by their code '''
-    print('Search are made by the road code, example: *-1-3-8-12-22-* ending type')
-    print('Any coincidence will be displayed with some statistics values')
-    print('')
-    search = input('Please, insert the search: ').strip()
-
-    results = []
-    search_endings = {k:0 for k in endings.keys()} | {'unfinished': 0}
-    for way in all_ways:
-        if search in str(way):
-            results.append(way)
-            if way.finished is not None:
-                search_endings[way.finished] += 1
-
-    if results != []:
-        if len(results) == 1:
-            print(results[0].summary(3))
-        for way in results:
-            print(way)
-        
-        print('\n\nRoads found:', len(results))
-        to_show = GetEndingStatistics(search_endings, len(results))
-        print(to_show)
-    else:
-        print(f'Not results for {search} found')
-
-
-def DisplaySearchByPoints():
-    ''' Search for roads by a specific novel points condition '''
-
-    while True:
-        print(f'''
-        The novel points are: {novel_points}
-        Please insert the search condition following this example format:
-        {novel_points[0]} >= 5
-        So you can use <,>,>=,<=, = operators
-        To do a multiple condition search, separate the conditions by commas
-        {novel_points[0]} >= 0, {novel_points[0]} < 10
-
-        [0]: Return
-        ''')
-
-        search = input('Insert the search condition: ').strip()
-
-        if search == '0': break
-
-        try:
-            results = []
-            conditions = search.split(',')
-            for way in all_ways:
-                conditionOK = True
-                for condition in conditions:
-                    point, operator, value = condition.strip().split(' ')
-                    currentPoint = int(way.points[point])
-                    if not ConditionIsRight(currentPoint, operator, int(value)):
-                        conditionOK = False
-                        break
-
-                if conditionOK:
-                    results.append(way)
-
-            if len(results) == 0:
-                print('Not results found')
-            else:
-                for way in results:
-                    print(way)
-
-            break
-        except:
-            print('Invalid condition')
-
-
-
-def DisplaySearchByEnding():
-    ''' Search for all roads of a specific ending type '''
-    options = ''
-    i = 1
-    for ed in endings:
-        options += f'        [{i}]: {ed}\n'
-        i+=1
-    options += '        [0]: Return'
-
-    while True:
-        print(f'''
-        the endings are: {endings.keys()}
-        Select a ending to show all roads with that ending
-        Separate by commas to do a multiple search
-        ''')
-        print(options)
-
-        com = input('Insert the ending(s) for the search: ').strip()
-
-        if com == '0': break
-
-        results = []
-        ids = [int(id.strip()) for id in com.split(',')]
-        eds = [list(endings.keys())[ed - 1] for ed in ids if ed in range(1, i)]
-        if eds == []:
-            print('Invalid endings')
-            continue
-
-        for way in all_ways:
-            if way.finished is None: continue
-
-            if way.finished in eds:
-                results.append(way)
-
-
-        if len(results) == 0:
-            print('Not results found')
-        else:
-            for way in results:
-                print(way)
-
-        break
-
-def GetRoadsBySearch(search_type:str, search:str):
-    results = []
-    if search_type == 'code':
-        codes = [s.strip() for s in search.split(',') if s != '']
-
-        for way in all_ways:
-            coincidance = True
-            for code in codes:
-                
-                if code not in str(way):
-                    coincidance = False
-                    break
-
-            if coincidance: results.append(way)     
-
-    elif search_type == 'ending':
-        criterions = [s.strip() for s in search.split(',') if s != '']
-
-        for way in all_ways:
-            if way.finished is None:
-                continue
-            if way.finished in criterions:
-                results.append(way)
-
-    elif search_type == 'points':
-        conditions = search.split(',')
-        for way in all_ways:
-            conditionOK = True
-            for condition in conditions:
-                point, operator, value = condition.strip().split(' ')
-                currentPoint = int(way.points[point])
-                if not ConditionIsRight(currentPoint, operator, int(value)):
-                    conditionOK = False
-                    break
-
-            if conditionOK:
-                results.append(way)
-
-    if len(results) == 0:
-        results = None
-
-    return results
 
 
 def GetDecisionsBySearch(search_type:str, search:str = ''):
@@ -497,5 +246,45 @@ def GetDecisionsBySearch(search_type:str, search:str = ''):
     return results
 
 
-#if __name__ == '__main__':
-    #run()
+def GetRoadsBySearch(search_type:str, search:str):
+    results = []
+    if search_type == 'code':
+        codes = [s.strip() for s in search.split(',') if s != '']
+
+        for way in all_ways:
+            coincidance = True
+            for code in codes:
+                
+                if code not in str(way):
+                    coincidance = False
+                    break
+
+            if coincidance: results.append(way)     
+
+    elif search_type == 'ending':
+        criterions = [s.strip() for s in search.split(',') if s != '']
+
+        for way in all_ways:
+            if way.finished is None:
+                continue
+            if way.finished in criterions:
+                results.append(way)
+
+    elif search_type == 'points':
+        conditions = search.split(',')
+        for way in all_ways:
+            conditionOK = True
+            for condition in conditions:
+                point, operator, value = condition.strip().split(' ')
+                currentPoint = int(way.points[point])
+                if not ConditionIsRight(currentPoint, operator, int(value)):
+                    conditionOK = False
+                    break
+
+            if conditionOK:
+                results.append(way)
+
+    if len(results) == 0:
+        results = None
+
+    return results
