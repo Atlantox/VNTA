@@ -119,9 +119,9 @@ class ActionChain:
     
     def decision_is_compatible(self, decision:Decision):
         ''' Return True if the passed decision are valid to take, otherwhise return False '''
-        if self.finished is not None:
+        #if self.finished is not None:
             #  Finished ActionChains can't take more decisions
-            return False
+            #return False
 
         if decision.dependencies is not None:
             #  If the decision depends of an previous decision that wasn't taken

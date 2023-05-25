@@ -43,8 +43,6 @@ def OpenAnalyticsWindow():
     ''' The main window where the user will do the basic commands '''
     mainWindow = Toplevel()
     mainWindow.title('Analytics window')
-    #mainWindow.geometry('400x300')
-    #mainWindow.resizable(False, False)
 
     def clear_menu():
         for child in menu_side.winfo_children():

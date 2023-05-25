@@ -35,9 +35,51 @@ def CreateDecisionsTree():
     ''' Each Decision branches the start point creating a tree of Decisions '''
     crt_id = 0  # Current decision index
 
+    ways_idLists = []
+    total_combinations = 1
+    counter = 0
+    brancher_decisions = []
+
     while crt_id < len(all_decisions):
         currentDecision:Decision =  all_decisions[crt_id]
-        print(currentDecision)
+
+        if currentDecision.type == 'D':
+            counter+=1 
+            related_decisions = GetRelatedDecisions(currentDecision, crt_id)
+            options = []
+            for option in [op.option for op in related_decisions]:
+                options.append({
+                    'name':option
+                })
+
+            brancher_decisions.append({
+                'name':related_decisions[0].name,
+                'options': options
+                })
+
+            possible_options = len(related_decisions)
+            total_combinations *= possible_options
+            crt_id += possible_options - 1
+
+        crt_id += 1
+
+    print('total:', total_combinations)
+    print('counter:',counter)
+
+    aux = total_combinations
+    for decision in brancher_decisions:
+        aux /= len(decision['options'])
+        for option in decision['options']:
+            option['times'] = int(aux)
+
+    for d in brancher_decisions:
+        print(d['name'], d['options'], '\n')
+
+    return
+
+
+    while crt_id < len(all_decisions):
+        currentDecision:Decision =  all_decisions[crt_id]
 
         if currentDecision.type == 'D':  # Decision
             ''' A decision consist in a situation and several possible options '''
@@ -117,16 +159,21 @@ def CreateDecisionsTree():
                 if available_to_take:
                     endingType = currentDecision.type.split('-')[1]
                     way.finish(endingType)
+
                     try:
                         endings[endingType] += 1
                     except KeyError:
                         endings[endingType] = 1
+
+
+
                         
         else:
             messagebox.showerror('Decision type error', f"Decision '{currentDecision.id}' has wrong type: {currentDecision.type}\nPlease use D, C, I or E-")
             raise KeyError('Unknown decision type usage')
 
         crt_id += 1
+        #print(len(all_ways))
 
     if fileFormat in AVAILABLE_FORMATS:
         '''
@@ -151,10 +198,10 @@ def SaveDecisionsTree():
     file = open(new_path, 'wb')
 
     to_save = {
-        'all_ways': all_ways.copy(),
-        'all_decisions': all_decisions.copy(),
-        'novel_points': novel_points.copy(),
-        'endings': endings.copy()
+        'all_ways': all_ways,
+        'all_decisions': all_decisions,
+        'novel_points': novel_points,
+        'endings': endings
     }
 
     pickle.dump(to_save, file)
