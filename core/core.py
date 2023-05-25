@@ -1,5 +1,7 @@
 import pickle
 
+from tkinter import messagebox
+
 from core.utils import *
 
 
@@ -30,13 +32,12 @@ def StartDecisionsTree(path):
 
 
 def CreateDecisionsTree():
-    '''
-    Each Decision branches the start point creating a tree of Decisions
-    '''
+    ''' Each Decision branches the start point creating a tree of Decisions '''
     crt_id = 0  # Current decision index
 
     while crt_id < len(all_decisions):
         currentDecision:Decision =  all_decisions[crt_id]
+        print(currentDecision)
 
         if currentDecision.type == 'D':  # Decision
             ''' A decision consist in a situation and several possible options '''
@@ -75,7 +76,8 @@ def CreateDecisionsTree():
         elif currentDecision.type == 'C':  # Consecuence
             ''' Consecuence decision consist in a decision that happen depending of a previous decision taken '''
             if all_ways == []:
-                print(f'Consecuences needs a previous decision in {currentDecision}')
+                messagebox.showerror('Decision type error', f"Decision '{currentDecision.id}' type cannot be C without a previous Decision")
+                raise KeyError('Incorrect C decision type usage')
             else:
                 for way in all_ways:
                     if not way.decision_is_compatible(currentDecision):
@@ -121,7 +123,8 @@ def CreateDecisionsTree():
                         endings[endingType] = 1
                         
         else:
-            print(f'{currentDecision.id} decision has wrong type: {currentDecision.type}\nPlease use D, C, I or E-')
+            messagebox.showerror('Decision type error', f"Decision '{currentDecision.id}' has wrong type: {currentDecision.type}\nPlease use D, C, I or E-")
+            raise KeyError('Unknown decision type usage')
 
         crt_id += 1
 
@@ -134,7 +137,7 @@ def CreateDecisionsTree():
         '''
         save_path = SaveDecisionsTree()
 
-    print('Decision tree successfully created and saved in:', save_path)
+    messagebox.showinfo('Success', 'Decision tree successfully created and saved in: ' + save_path)
 
 
 def SaveDecisionsTree():
@@ -173,7 +176,7 @@ def LoadDecisionsTree():
     for e, v in data['endings'].items(): endings[e] = v
     for d in data['all_decisions']: all_decisions.append(d)
 
-    print('Decision tree successfully loaded')
+    messagebox.showinfo('Success', 'Decision tree successfully loaded')
 
 
 def GetRelatedDecisions(decision, crt_id):
@@ -189,6 +192,11 @@ def GetRelatedDecisions(decision, crt_id):
 
 
 def GetDecisionsBySearch(search_type:str, search:str = ''):
+    '''
+    Return a list of the Decisions depending of a search
+    search can be by 'id', 'name', 'option', 'dependency' and 'points'
+    do a '*' search to get all Decisions
+    '''
     if search == '*':
         return all_decisions
 
@@ -247,6 +255,13 @@ def GetDecisionsBySearch(search_type:str, search:str = ''):
 
 
 def GetRoadsBySearch(search_type:str, search:str):
+    '''
+    Returns a list of ActionChain depending of a search criterium
+    can be by 'code', 'ending' and 'points'
+    do a search with '*' to get all roads
+    '''
+    if search == '*': return all_ways
+
     results = []
     if search_type == 'code':
         codes = [s.strip() for s in search.split(',') if s != '']

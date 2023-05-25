@@ -127,8 +127,10 @@ class ActionChain:
             #  If the decision depends of an previous decision that wasn't taken
             #  the ActionChain can't take that decision
             for dependency in decision.dependencies:
-                if dependency not in self.idList:
-                    return False
+                if dependency[0] == '-':  #  Negative dependency
+                    if dependency[1:] in self.idList: return False
+                else:
+                    if dependency not in self.idList: return False
 
         return True
 

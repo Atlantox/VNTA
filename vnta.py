@@ -1,7 +1,6 @@
 from tkinter import *
 
 from tkinter import filedialog
-from tkinter import messagebox
 
 from core.core import *
 
