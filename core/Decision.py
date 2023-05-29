@@ -1,3 +1,24 @@
+class Option():
+    def __init__(self, id:str, name:str, dependencies:list, points:list):
+        self.id = id
+        self.name = name
+        self.dependencies = dependencies
+        self.points = points
+        self.times = 0
+
+    def __str__(self):
+        return self.name
+    
+    def get_points_as_str(self, novel_points:list[str]):
+        result = ''
+        if novel_points == []:
+            return self.points
+        else:
+            for i in range(len(novel_points)):
+                result += f'{novel_points[i]}:  ({self.points[i]}) ||| '
+
+        return result
+
 class Decision:
     '''
     A Decision is a fork in a visual novel's history, generally the player
@@ -14,13 +35,12 @@ class Decision:
     Many Decisions can be "conditionals", these happens if the
     player have enough "points" or not.       
     '''
-    def __init__(self, id, type, name, option, dependencies, points):
+    def __init__(self, id:str, type:str, name:str, options:list[Option]):
         self.id = id  # Unique identifier
         self.type = type  # [D]ecision, [C]onsecuence, [E]nding, [I]f
         self.name = name  # Name of the decision
-        self.option = option  # Possible option that player can take
-        self.dependencies = dependencies  # List of the previous decision's id that needs to be taked to take current decision
-        self.points = points  # List of points, can be use to compare or add or delete points
+        self.options = options  # Possible option that player can take
+        self.times = 0
 
     def __str__(self):
         return self.summary()
@@ -31,10 +51,10 @@ class Decision:
             return f'{self.id} || {self.name}'  
         if deep_level == 1:  # Display id, name, option and points
             points = self.get_points_as_str(novel_points)
-            return f'{self.id} || {self.name} ||| {self.option} ||| {points}'
+            return f'{self.id} || {self.name} ||| {self.options} ||| {points}'
         if deep_level == 2:  # Display id, type, name, option, dependencies and points
             points = self.get_points_as_str(novel_points)
-            return f'{self.id} || {self.type} || {self.name} ||| {self.option} ||| {self.dependencies} ||| {points}'
+            return f'{self.id} || {self.type} || {self.name} ||| {self.options}  ||| {points}'
         
     
     def get_points_as_str(self, novel_points:list[str]):
@@ -46,3 +66,34 @@ class Decision:
                 result += f'{novel_points[i]}:  ({self.points[i]}) ||| '
 
         return result
+    
+    def get_options_to_take(self, left_priority):
+        options = self.get_hightest_options()
+        
+        if len(options) == 1: return options[0]
+
+        if left_priority:
+            return options[0]
+        else:
+            return options[-1]
+
+    def get_hightest_options(self):
+        ids = []
+        max = 0
+
+        for i, option in enumerate(self.options):
+            if i == 0:
+                max = option.times
+            
+            if option.times == max:
+                ids.append(i)
+            elif option.times > max:
+                max = option.times
+                ids.clear()
+                ids.append(i)
+
+        hightest_options = []
+        for id in ids:
+            hightest_options.append(self.options[id])
+
+        return hightest_options

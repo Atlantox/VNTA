@@ -1,4 +1,4 @@
-from core.Decision import Decision
+from core.Decision import Decision, Option
 
 class ActionChain:
     '''
@@ -14,9 +14,10 @@ class ActionChain:
     Knowing how many balance is your visual novel, allows you to
     create a difficult or easy game based in bad ending and good ending
     '''
-    def __init__(self, decisions:list[Decision], points:list|dict):
-        self.decisionChain = decisions  # A ordered list of decisions already taken
-        self.idList = [d.id for d in self.decisionChain]  # A list of the ids of taken decisions
+    def __init__(self, points:list|dict):
+        #self.decisionChain = decisions  # A ordered list of decisions already taken
+        #self.idList = [d.id for d in self.decisionChain]  # A list of the ids of taken decisions
+        self.idList = []
 
         if type(points) == list:
             self.points = {p:0 for p in points}  # The points of the novel
@@ -31,7 +32,7 @@ class ActionChain:
     def summary(self, detailLevel:int = 0):
         ''' Recieve a number between 0 and 2, while larger the number more info is displayed '''
         result = 'Empty'
-        if self.decisionChain:
+        if self.idList != []:
             if detailLevel == 0:
                 #  Return the sequence of ids of all decisions
                 result = self.get_decision_sequency()
@@ -66,12 +67,13 @@ class ActionChain:
         example: *-1-3-5-8-11-15-
         '''
         result = '*-'
-        for d in self.decisionChain:
-            result += str(d.id) + '-'
+        for id in self.idList:
+            result += id + '-'
+            
         if self.finished is not None: 
             result += f' {self.finished}'
         else:
-            result += result[:-1] + ' #-Unfinished-#'
+            result += ' #-Unfinished-#'
         
         return result
 
@@ -89,24 +91,23 @@ class ActionChain:
         ''' Return a new equal ActionChain instance '''
         return ActionChain(decisions=self.decisionChain.copy(), points=self.points)
     
-    def take_decision(self, decision, change_points = True):
+    def take_option(self, option:Option, change_points = True):
         ''' Take a decision and add it to the decision chain '''
-        self.decisionChain.append(decision)
-
         if change_points:
-            self.change_points(decision)
+            self.change_points(option)
 
-        self.idList.append(decision.id)
+        self.idList.append(option.id)
         return self
     
-    def change_points(self, decision):
+    def change_points(self, option:Option):
         ''' Modify the points of the ActionChain depending of the decision given '''
         i = 0
         new_points = self.points.copy()
-        if decision.points != [None] * len(decision.points):
+
+        if option.points != [None] * len(option.points):
             for k, v in new_points.items():
-                if decision.points[i] is not None:
-                    new_points[k] += decision.points[i]
+                if option.points[i] is not None:
+                    new_points[k] += option.points[i]
                 i += 1
         
         self.points = new_points
@@ -117,16 +118,16 @@ class ActionChain:
         #return [v for v in self.points.values()]
         return list(self.points.values())
     
-    def decision_is_compatible(self, decision:Decision):
+    def option_is_compatible(self, option:Option):
         ''' Return True if the passed decision are valid to take, otherwhise return False '''
         #if self.finished is not None:
             #  Finished ActionChains can't take more decisions
             #return False
 
-        if decision.dependencies is not None:
+        if option.dependencies is not None:
             #  If the decision depends of an previous decision that wasn't taken
             #  the ActionChain can't take that decision
-            for dependency in decision.dependencies:
+            for dependency in option.dependencies:
                 if dependency[0] == '-':  #  Negative dependency
                     if dependency[1:] in self.idList: return False
                 else:

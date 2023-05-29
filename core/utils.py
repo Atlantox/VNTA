@@ -1,7 +1,7 @@
 from openpyxl import load_workbook
 
 from core.ActionChain import ActionChain
-from core.Decision import Decision
+from core.Decision import Decision, Option
 
 def GetFileNameAndFormat(path:str):
     ''' Get a file path and returns the file name without format, and the file format '''
@@ -20,11 +20,11 @@ def ReadDecisions(filePath:str, fileFormat:str):
     ''' Return all decisions in the specified .csv or excel file and the novel points '''
     decisions = []
     if fileFormat == '.xlsx': # Excel file
-        decisions, novel_points = LoadDecisionsFromExcel(filePath)        
+        decisions, novel_points, total_combinations = LoadDecisionsFromExcel(filePath)        
     elif fileFormat == '.csv':  # CSV file
-        decisions, novel_points = LoadDecisionsFromCSV(filePath)
+        decisions, novel_points, total_combinations = LoadDecisionsFromCSV(filePath)
         
-    return decisions, novel_points
+    return decisions, novel_points, total_combinations
 
 
 def LoadDecisionsFromExcel(filePath:str):
@@ -36,42 +36,77 @@ def LoadDecisionsFromExcel(filePath:str):
     excel = load_workbook(filename=filePath, read_only=True)
     sheet = excel['decisions']
     rows = sheet.iter_rows()
-    last_decision = ''
+    all_rows = [r for r in rows]
+    total_combinations = 1
 
-    for i, row in enumerate(rows):
+    i = 0
+    while(i < len(all_rows)):
+        row = all_rows[i]
         if i == 0:
             # Getting the novels points names
             novel_points = [str(c.value).strip() for c in row[5:] if str(c.value).strip() != '' and c.value is not None]
     
         else:
-            #  Getting the first 5 fields (id, type, name, option, dependency)
-            id, dtype, name, option, dependencies = [str(c.value) for c in row[:5]]
-            if name == 'None':
-                name = last_decision
-            else:
-                last_decision = name                
+            decision_name = str(row[2].value)
+            related_rows = [row]
+            relatedCounter = 1
+            while(True):
+                try:
+                    next_row = all_rows[i + relatedCounter]
+                    # If the name is None and the id cell is not empty, then is a decision with more than one option
+                    if str(next_row[2].value) == 'None' and str(next_row[0].value) != 'None':
+                        related_rows.append(next_row)
+                        relatedCounter += 1
+                    else:
+                        break
+                except:
+                    break
+            
+            i += relatedCounter - 1
+            options = []
+            for related in related_rows:
+                #  Getting the first 5 fields (id, type, name, option, dependency)
+                id, dtype, name, option, dependencies = [str(c.value) for c in related[:5]]
 
-            points = []
-            for point in [str(c.value) for c in row[5:5 + len(novel_points)]]:
-                #  Converting the points in to usaeful values
-                if point != 'None': points.append(int(point))
-                else: points.append(None)            
+                points = [str(c.value) for c in related[5:5 + len(novel_points)]]
+                points, dependencies = GetPointsAndDependencies(points, dependencies)
 
-            if dependencies != 'None':
-                # If the decision has dependency, convert the string into a list
-                dependencies = [s.strip() for s in dependencies.split(',') if s != ''] 
-            else: dependencies = None
+                options.append(Option(
+                    id=id, 
+                    name=option,
+                    dependencies=dependencies,
+                    points=points
+                ))
+
+            if dtype == 'D':
+                total_combinations *= len(options)
 
             decisions.append(Decision(
                 id=id,
                 type=dtype,
-                name=name,
-                option=option,
-                dependencies=dependencies,
-                points=points,
+                name=decision_name,
+                options=options,
             ))
-    
-    return decisions, novel_points
+
+        i+=1
+
+    return decisions, novel_points, total_combinations
+
+
+def GetPointsAndDependencies(points:list[str], dependencies:str):
+    local_points = []
+    local_dependencies = []
+    for point in points:
+        #  Converting the points in to useful values
+        if point != 'None': local_points.append(int(point))
+        else: local_points.append(None)            
+
+    if dependencies != 'None':
+        # If the decision has dependency, convert the string into a list
+        local_dependencies = [s.strip() for s in dependencies.split(',') if s != ''] 
+    else: local_dependencies = None
+
+    return local_points, local_dependencies
 
 
 def LoadDecisionsFromCSV(filePath:str):

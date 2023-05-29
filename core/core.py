@@ -11,19 +11,20 @@ fileName = ''
 fileFormat = ''
 all_ways:list[ActionChain] = []  # The list of all ActionChain
 all_decisions, novel_points = [], []
+total_combinations = 1
 endings = {}  # Ending statistics
 
 
 def StartDecisionsTree(path):
     ''' Reset all the global variables and Create or load the decision tree if exists '''
-    global all_decisions, novel_points, fileName, filePath, fileFormat, all_ways, endings
+    global all_decisions, novel_points, fileName, filePath, fileFormat, all_ways, endings, total_combinations
     all_ways, all_decisions, novel_points = [], [], [] # Cleaning global variables
     endings = {}
     filePath = path
     fileName, fileFormat = GetFileNameAndFormat(filePath)
 
     if fileFormat in AVAILABLE_FORMATS:
-        all_decisions, novel_points = ReadDecisions(filePath, fileFormat)
+        all_decisions, novel_points, total_combinations = ReadDecisions(filePath, fileFormat)
         CreateDecisionsTree()
     elif fileFormat == '.vnta':
         LoadDecisionsTree()  
@@ -35,47 +36,65 @@ def CreateDecisionsTree():
     ''' Each Decision branches the start point creating a tree of Decisions '''
     crt_id = 0  # Current decision index
 
-    ways_idLists = []
-    total_combinations = 1
-    counter = 0
-    brancher_decisions = []
+    InitDecisionTree()
 
-    while crt_id < len(all_decisions):
-        currentDecision:Decision =  all_decisions[crt_id]
+    left_priority = True
+    roads_left = total_combinations
+    final_roads = []
 
-        if currentDecision.type == 'D':
-            counter+=1 
-            related_decisions = GetRelatedDecisions(currentDecision, crt_id)
-            options = []
-            for option in [op.option for op in related_decisions]:
-                options.append({
-                    'name':option
-                })
+    
+    currentRoad = ActionChain(points=novel_points)
+    initial_ids = list(range(0, len(all_decisions[0].options)))
 
-            brancher_decisions.append({
-                'name':related_decisions[0].name,
-                'options': options
-                })
+    while(roads_left > 0):
+        initial_position = -1
+        first_decision = True
+        for decision in all_decisions:
+            if decision.type == 'D':
+                if first_decision:
+                    if left_priority:
+                        initial_position += 1
+                        if initial_position == len(initial_ids): initial_position = 0
+                    else:
+                        if roads_left == total_combinations / 2:
+                            # Half of roads recently reached
+                            initial_position = 0
+                        else:
+                            initial_position -= 1
+                            if initial_position < 0: initial_position = len(initial_ids) - 1
+                        
+                    option_to_take = decision.options[initial_ids[initial_position]]
+                else:
+                    option_to_take:Option = decision.get_options_to_take(left_priority)
 
-            possible_options = len(related_decisions)
-            total_combinations *= possible_options
-            crt_id += possible_options - 1
+                print(decision.name, option_to_take)
+                if currentRoad.option_is_compatible(option_to_take):
+                    first_decision = False
+                    currentRoad.take_option(option_to_take)
+                    option_to_take.times -= 1
 
-        crt_id += 1
+        roads_left -= 1
+        final_roads.append(currentRoad)
+        currentRoad = ActionChain(points=novel_points)
 
-    print('total:', total_combinations)
-    print('counter:',counter)
+        if roads_left == total_combinations / 2: left_priority = False
 
-    aux = total_combinations
-    for decision in brancher_decisions:
-        aux /= len(decision['options'])
-        for option in decision['options']:
-            option['times'] = int(aux)
 
-    for d in brancher_decisions:
-        print(d['name'], d['options'], '\n')
+    print('Total combinations:', len(final_roads))
+
+    for road in final_roads:
+        print(road.summary(0))
+
+    '''
+    for decision in all_decisions:
+        if decision.type == 'D':
+            print(decision.name, decision.times)
+            for option in decision.options:
+                print(option, option.times)
+    '''
 
     return
+
 
 
     while crt_id < len(all_decisions):
@@ -187,6 +206,15 @@ def CreateDecisionsTree():
     messagebox.showinfo('Success', 'Decision tree successfully created and saved in: ' + save_path)
 
 
+def InitDecisionTree():
+    for decision in all_decisions:
+        if decision.type == 'D':
+            decision.times = total_combinations
+            times_per_option = int(total_combinations / len(decision.options))
+            for option in decision.options:
+                option.times = times_per_option
+
+
 def SaveDecisionsTree():
     '''
     Once created the decision tree, it is saved in a file to prevent to create another equal decision tree
@@ -206,6 +234,7 @@ def SaveDecisionsTree():
 
     pickle.dump(to_save, file)
     file.close()
+
     return new_path
 
 
