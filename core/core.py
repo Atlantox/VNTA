@@ -45,31 +45,45 @@ def CreateDecisionsTree():
     
     currentRoad = ActionChain(points=novel_points)
     initial_ids = list(range(0, len(all_decisions[0].options)))
+    cycles = len(initial_ids)
+    initial_position = 1
+
 
     while(roads_left > 0):
-        initial_position = -1
         first_decision = True
         for decision in all_decisions:
+            
             if decision.type == 'D':
                 if first_decision:
-                    if left_priority:
-                        initial_position += 1
-                        if initial_position == len(initial_ids): initial_position = 0
+                    first_decision = False
+                    cycles -= 1
+                    if cycles == 0:
+                        cycles = len(initial_ids)
+                        left_priority = not left_priority
+                    if len(initial_ids) == 2:
+                        if initial_position == 0: initial_position = 1
+                        elif initial_position == 1: initial_position = 0
                     else:
-                        if roads_left == total_combinations / 2:
-                            # Half of roads recently reached
-                            initial_position = 0
+                        if left_priority:
+                            initial_position += 1
+                            if initial_position >= len(initial_ids): initial_position = 0
                         else:
-                            initial_position -= 1
-                            if initial_position < 0: initial_position = len(initial_ids) - 1
+                            if roads_left == total_combinations / 2:
+                                # Half of roads recently reached
+                                initial_position = 0
+                                pass
+                            else:
+                                initial_position -= 1
+                                if initial_position < 0: initial_position = len(initial_ids) - 1
                         
+                    #print(initial_position)
                     option_to_take = decision.options[initial_ids[initial_position]]
                 else:
-                    option_to_take:Option = decision.get_options_to_take(left_priority)
+                    option_to_take:Option = decision.get_option_to_take(left_priority)
 
-                print(decision.name, option_to_take)
+                #print(decision.name, option_to_take)
                 if currentRoad.option_is_compatible(option_to_take):
-                    first_decision = False
+                    left_priority = not left_priority
                     currentRoad.take_option(option_to_take)
                     option_to_take.times -= 1
 
@@ -81,9 +95,10 @@ def CreateDecisionsTree():
 
 
     print('Total combinations:', len(final_roads))
-
-    for road in final_roads:
-        print(road.summary(0))
+    u = GetSortedActionChain(final_roads)
+    print(len(u))
+    #for r  oad in GetSortedActionChain(final_roads):
+        #print(road.summary(0))
 
     '''
     for decision in all_decisions:

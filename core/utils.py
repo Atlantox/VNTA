@@ -200,7 +200,7 @@ def GetSortedActionChain(ways:list[ActionChain]):
     decisions = {}
     sortedDecisions = []
     for way in ways:
-        decisions[str(way)] = way
+        decisions[way.get_decision_sequency(True)] = way
 
     keys = list(decisions.keys())
     keys.sort()

@@ -61,7 +61,7 @@ class ActionChain:
 
         return result
     
-    def get_decision_sequency(self):
+    def get_decision_sequency(self, only_ids = False):
         '''
         Return a string with a sequency of decisions's id taken
         example: *-1-3-5-8-11-15-
@@ -69,11 +69,12 @@ class ActionChain:
         result = '*-'
         for id in self.idList:
             result += id + '-'
-            
-        if self.finished is not None: 
-            result += f' {self.finished}'
-        else:
-            result += ' #-Unfinished-#'
+        
+        if not only_ids:
+            if self.finished is not None: 
+                result += f' {self.finished}'
+            else:
+                result += ' #-Unfinished-#'
         
         return result
 

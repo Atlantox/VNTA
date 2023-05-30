@@ -7,7 +7,7 @@ class Option():
         self.times = 0
 
     def __str__(self):
-        return self.name
+        return f'{self.name} - {self.times}'
     
     def get_points_as_str(self, novel_points:list[str]):
         result = ''
@@ -67,8 +67,12 @@ class Decision:
 
         return result
     
-    def get_options_to_take(self, left_priority):
+    def get_option_to_take(self, left_priority):
         options = self.get_hightest_options()
+
+        #for o in options:
+            #print(o)
+        #print()
         
         if len(options) == 1: return options[0]
 
