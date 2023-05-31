@@ -36,7 +36,7 @@ def LoadDecisionsFromExcel(filePath:str):
     excel = load_workbook(filename=filePath, read_only=True)
     sheet = excel['decisions']
     rows = sheet.iter_rows()
-    all_rows = [r for r in rows]
+    all_rows = [r for r in rows if str(r[0].value) != 'None']
     total_combinations = 1
 
     i = 0
@@ -50,17 +50,20 @@ def LoadDecisionsFromExcel(filePath:str):
             decision_name = str(row[2].value)
             related_rows = [row]
             relatedCounter = 1
-            while(True):
+            searching = True
+            while(searching):
                 try:
                     next_row = all_rows[i + relatedCounter]
                     # If the name is None and the id cell is not empty, then is a decision with more than one option
-                    if str(next_row[2].value) == 'None' and str(next_row[0].value) != 'None':
+                    #print(str(next_row[0].value) == 'None')
+
+                    if str(next_row[2].value) == 'None':
                         related_rows.append(next_row)
                         relatedCounter += 1
                     else:
-                        break
+                        searching = False
                 except:
-                    break
+                    searching = False
             
             i += relatedCounter - 1
             options = []

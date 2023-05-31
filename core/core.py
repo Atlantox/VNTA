@@ -35,8 +35,63 @@ def StartDecisionsTree(path):
 def CreateDecisionsTree():
     ''' Each Decision branches the start point creating a tree of Decisions '''
     crt_id = 0  # Current decision index
-
     InitDecisionTree()
+    firsts_options = all_decisions[0].options
+    firsts_ids = [o.id for o in firsts_options]
+    current_combinations = int(total_combinations / len(firsts_options))
+
+    roads = []
+    for id in firsts_ids:
+        roads += [id + ','] * int(total_combinations / len(firsts_options))
+    #print(len(roads))
+    r_id = 0
+    count = 0
+    for decision in all_decisions[1:]:
+        print(decision.name)
+        if decision.type == 'D':
+            current_combinations /= len(decision.options)
+            o_id = 0
+
+            while True:
+                #print(r_id)
+                to_add = roads[r_id] + decision.options[o_id].id + ','
+                #print(f'{r_id}:{r_id+int(current_combinations)} -> {decision.options[o_id].name}')
+
+                roads[r_id:r_id+int(current_combinations)] = [to_add] * int(current_combinations)
+
+                r_id += int(current_combinations)
+                if r_id == len(roads):
+                    r_id = 0
+                    #print('rompe aquí')
+                    break
+                o_id += 1
+                if o_id == len(decision.options): o_id = 0
+                count += 1
+                print(count)
+                if count >= len(roads):
+                    #print('rompe acá')
+                    break
+                '''
+                count += 1
+                if count == current_combinations:
+                    o_id += 1
+                    if o_id == len(decision.options): o_id = 0
+                    count = 0
+                
+                #print(current_combinations)
+                if r_id == len(roads):  
+                    break
+                '''
+        
+
+    print('\n')
+    for r in roads: print(r)
+    print('decisiones', len(all_decisions))
+    print('caminos', total_combinations)
+    print('caminos reales', len(roads))
+
+
+    '''
 
     left_priority = True
     roads_left = total_combinations
@@ -99,7 +154,9 @@ def CreateDecisionsTree():
     print(len(u))
     #for r  oad in GetSortedActionChain(final_roads):
         #print(road.summary(0))
-
+    '''
+        
+        
     '''
     for decision in all_decisions:
         if decision.type == 'D':
