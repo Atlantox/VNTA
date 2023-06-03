@@ -7,7 +7,7 @@ class Option():
         self.times = 0
 
     def __str__(self):
-        return f'{self.name} - {self.times}'
+        return f'{self.name}'
     
     def get_points_as_str(self, novel_points:list[str]):
         result = ''

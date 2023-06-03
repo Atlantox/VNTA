@@ -14,10 +14,10 @@ class ActionChain:
     Knowing how many balance is your visual novel, allows you to
     create a difficult or easy game based in bad ending and good ending
     '''
-    def __init__(self, points:list|dict):
+    def __init__(self, points:list|dict, idList:list = []):
         #self.decisionChain = decisions  # A ordered list of decisions already taken
         #self.idList = [d.id for d in self.decisionChain]  # A list of the ids of taken decisions
-        self.idList = []
+        self.idList = idList if idList else []
 
         if type(points) == list:
             self.points = {p:0 for p in points}  # The points of the novel
@@ -90,7 +90,7 @@ class ActionChain:
 
     def copy(self):
         ''' Return a new equal ActionChain instance '''
-        return ActionChain(decisions=self.decisionChain.copy(), points=self.points)
+        return ActionChain(points=self.points.copy(), idList=self.idList.copy())
     
     def take_option(self, option:Option, change_points = True):
         ''' Take a decision and add it to the decision chain '''

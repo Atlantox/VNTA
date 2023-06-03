@@ -31,6 +31,54 @@ def StartDecisionsTree(path):
 
     return all_decisions, all_ways, endings, novel_points
 
+#counter = 0
+
+def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, all_paths:list):
+    #for d in decisions: print(d)
+    #print()
+    if current_path == []:
+        current_path = ActionChain(points=novel_points)
+    print('recibe', current_path)
+
+    if not decisions:
+        print('añade', current_path, '\n')
+        #print(current_path)
+        #global counter
+        all_paths.append(current_path.copy())
+        #counter += 1
+        #print(counter)
+        
+        return
+
+    current_decision = decisions[0]
+    remaining_decisions = decisions[1:]
+    original_path = current_path.copy()
+    print('copia', original_path)
+
+    for option in current_decision.options:
+        #print(option)
+        #if not current_path.option_is_compatible(option):
+            #continue
+
+        if current_decision.type == 'D':
+            pass
+        elif current_decision.type == 'C':
+            pass
+        elif current_decision.type == 'I':
+            pass
+        elif 'E-' in current_decision.type:
+            endingType = current_decision.type.split('-')[1]
+            current_path.finish(endingType)
+        
+        print(current_path, 'toma decision', option)
+
+        #new_path = original_path.copy().take_option(option)
+        #new_path.take_option(option)
+        
+        #current_path + [option.id]
+        explore_decision_tree(remaining_decisions, original_path.copy().take_option(option), all_paths)
+
+
 
 def CreateDecisionsTree():
     ''' Each Decision branches the start point creating a tree of Decisions '''
@@ -39,6 +87,17 @@ def CreateDecisionsTree():
     firsts_options = all_decisions[0].options
     firsts_ids = [o.id for o in firsts_options]
     current_combinations = int(total_combinations / len(firsts_options))
+    print(total_combinations)
+
+    roads = []
+
+    explore_decision_tree(all_decisions, [], roads)
+
+    for r in roads: print(r)
+
+
+
+    return
 
     roads = []
     for id in firsts_ids:
