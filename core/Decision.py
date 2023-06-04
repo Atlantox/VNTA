@@ -1,5 +1,5 @@
 class Option():
-    def __init__(self, id:str, name:str, dependencies:list, points:list):
+    def __init__(self, id:str, name:str|list[str], dependencies:list, points:list):
         self.id = id
         self.name = name
         self.dependencies = dependencies

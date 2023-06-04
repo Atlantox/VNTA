@@ -92,12 +92,16 @@ class ActionChain:
         ''' Return a new equal ActionChain instance '''
         return ActionChain(points=self.points.copy(), idList=self.idList.copy())
     
-    def take_option(self, option:Option, change_points = True):
+    def take_option(self, option:Option, dtype:str, change_points = True):
         ''' Take a decision and add it to the decision chain '''
+        if 'E-' == dtype[0:2] or dtype == 'I':
+            change_points = False
+
         if change_points:
             self.change_points(option)
 
         self.idList.append(option.id)
+        if 'E-' == dtype[0:2]: self.finish(dtype[2:])
         return self
     
     def change_points(self, option:Option):
@@ -119,23 +123,61 @@ class ActionChain:
         #return [v for v in self.points.values()]
         return list(self.points.values())
     
-    def option_is_compatible(self, option:Option):
+    def option_is_compatible(self, option:Option, dtype:str):
         ''' Return True if the passed decision are valid to take, otherwhise return False '''
-        #if self.finished is not None:
-            #  Finished ActionChains can't take more decisions
-            #return False
-
+        
+        #  Finished ActionChains can't take more decisions
+        if self.finished is not None: return False
+        
+        is_compatible = True
         if option.dependencies is not None:
             #  If the decision depends of an previous decision that wasn't taken
             #  the ActionChain can't take that decision
             for dependency in option.dependencies:
                 if dependency[0] == '-':  #  Negative dependency
-                    if dependency[1:] in self.idList: return False
-                else:
-                    if dependency not in self.idList: return False
+                    if dependency[1:] in self.idList: 
+                        is_compatible = False
+                        break
+                else:  # Positive dependency
+                    if dependency not in self.idList:
+                        is_compatible = False
+                        break
 
-        return True
+        if dtype == 'I' or 'E-' in dtype:
+            # If the Decision is E- or I type, then ckeck if the current
+            # meets the conditions
+            for id, point in enumerate(self.points.keys()):
+                if option.points[id] is not None:
+                    if type(option.name) == list:
+                        is_compatible = self.condition_is_right(self.points[point], option.name[id], option.points[id])
+                    elif type(option.name) == str:
+                        is_compatible = self.condition_is_right(self.points[point], option.name, option.points[id])
+                    if not is_compatible: break
+
+        return is_compatible
 
     def finish(self, ending:str = 'Finished'):
         ''' Mark the ActionChain as finished '''
         self.finished = ending
+
+    def condition_is_right(self, left, operator, right):
+        ''' Return True if (left operator right), otherwise return False '''
+        result = False
+        if right is not None:
+            if operator == '<':
+                if left < right:
+                    result = True
+            if operator == '<=':
+                if left <= right:
+                    result = True
+            if operator == '>':
+                if left > right:
+                    result = True
+            if operator == '>=':
+                if left >= right:
+                    result = True
+            if operator == '=':
+                if left == right:
+                    result = True
+
+        return result

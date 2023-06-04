@@ -20,11 +20,11 @@ def ReadDecisions(filePath:str, fileFormat:str):
     ''' Return all decisions in the specified .csv or excel file and the novel points '''
     decisions = []
     if fileFormat == '.xlsx': # Excel file
-        decisions, novel_points, total_combinations = LoadDecisionsFromExcel(filePath)        
+        decisions, novel_points, total_combinations, endings = LoadDecisionsFromExcel(filePath)        
     elif fileFormat == '.csv':  # CSV file
-        decisions, novel_points, total_combinations = LoadDecisionsFromCSV(filePath)
+        decisions, novel_points, total_combinations, endings = LoadDecisionsFromCSV(filePath)
         
-    return decisions, novel_points, total_combinations
+    return decisions, novel_points, total_combinations, endings
 
 
 def LoadDecisionsFromExcel(filePath:str):
@@ -33,6 +33,7 @@ def LoadDecisionsFromExcel(filePath:str):
     IMPORTANT: the decisions must stay in a sheet named 'decisions'
     '''
     decisions = []
+    endings = {}
     excel = load_workbook(filename=filePath, read_only=True)
     sheet = excel['decisions']
     rows = sheet.iter_rows()
@@ -70,9 +71,15 @@ def LoadDecisionsFromExcel(filePath:str):
             for related in related_rows:
                 #  Getting the first 5 fields (id, type, name, option, dependency)
                 id, dtype, name, option, dependencies = [str(c.value) for c in related[:5]]
+                if 'E-' == dtype[0:2]:
+                    ending_name = dtype[2:]
+                    if ending_name not in endings: endings[ending_name] = 0
 
                 points = [str(c.value) for c in related[5:5 + len(novel_points)]]
                 points, dependencies = GetPointsAndDependencies(points, dependencies)
+
+                if dtype == 'I' or 'E-' == dtype[0:2]:
+                    if ',' in option: option = [n.strip() for n in option.split(',')]
 
                 options.append(Option(
                     id=id, 
@@ -93,7 +100,7 @@ def LoadDecisionsFromExcel(filePath:str):
 
         i+=1
 
-    return decisions, novel_points, total_combinations
+    return decisions, novel_points, total_combinations, endings
 
 
 def GetPointsAndDependencies(points:list[str], dependencies:str):

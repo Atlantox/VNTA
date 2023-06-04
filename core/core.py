@@ -24,60 +24,40 @@ def StartDecisionsTree(path):
     fileName, fileFormat = GetFileNameAndFormat(filePath)
 
     if fileFormat in AVAILABLE_FORMATS:
-        all_decisions, novel_points, total_combinations = ReadDecisions(filePath, fileFormat)
+        all_decisions, novel_points, total_combinations, endings = ReadDecisions(filePath, fileFormat)
         CreateDecisionsTree()
     elif fileFormat == '.vnta':
         LoadDecisionsTree()  
 
     return all_decisions, all_ways, endings, novel_points
 
-#counter = 0
-
 def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, all_paths:list):
-    #for d in decisions: print(d)
-    #print()
     if current_path == []:
         current_path = ActionChain(points=novel_points)
-    print('recibe', current_path)
 
     if not decisions:
-        print('añade', current_path, '\n')
-        #print(current_path)
-        #global counter
-        all_paths.append(current_path.copy())
-        #counter += 1
-        #print(counter)
-        
+        all_paths.append(current_path)
         return
 
     current_decision = decisions[0]
     remaining_decisions = decisions[1:]
     original_path = current_path.copy()
-    print('copia', original_path)
 
     for option in current_decision.options:
-        #print(option)
-        #if not current_path.option_is_compatible(option):
-            #continue
+        if original_path.option_is_compatible(option, current_decision.type):
+            if 'E-' == current_decision.type[0:2]:
+                endingType = current_decision.type[2:]
+                original_path.take_option(option, current_decision.type)
+                endings[endingType] += 1
+                all_paths.append(original_path)
+                continue
 
-        if current_decision.type == 'D':
-            pass
-        elif current_decision.type == 'C':
-            pass
-        elif current_decision.type == 'I':
-            pass
-        elif 'E-' in current_decision.type:
-            endingType = current_decision.type.split('-')[1]
-            current_path.finish(endingType)
-        
-        print(current_path, 'toma decision', option)
-
-        #new_path = original_path.copy().take_option(option)
-        #new_path.take_option(option)
-        
-        #current_path + [option.id]
-        explore_decision_tree(remaining_decisions, original_path.copy().take_option(option), all_paths)
-
+            explore_decision_tree(remaining_decisions, original_path.copy().take_option(option, current_decision.type), all_paths)
+        else:
+            if not remaining_decisions:
+                all_paths.append(current_path)
+                return
+            explore_decision_tree(remaining_decisions, original_path, all_paths)
 
 
 def CreateDecisionsTree():
@@ -93,7 +73,8 @@ def CreateDecisionsTree():
 
     explore_decision_tree(all_decisions, [], roads)
 
-    for r in roads: print(r)
+    print()
+    for r in roads: print(r.summary(1))
 
 
 
