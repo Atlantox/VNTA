@@ -1,3 +1,4 @@
+import os
 import pickle
 
 from tkinter import messagebox
@@ -36,7 +37,8 @@ def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, al
         current_path = ActionChain(points=novel_points)
 
     if not decisions:
-        all_paths.append(current_path)
+        AddNewRoad(current_path, all_paths, True)
+        #all_paths.append(current_path)
         return
 
     current_decision = decisions[0]
@@ -49,19 +51,37 @@ def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, al
                 endingType = current_decision.type[2:]
                 original_path.take_option(option, current_decision.type)
                 endings[endingType] += 1
-                all_paths.append(original_path)
+                AddNewRoad(original_path, all_paths)
+                #all_paths.append(original_path)
                 continue
 
             explore_decision_tree(remaining_decisions, original_path.copy().take_option(option, current_decision.type), all_paths)
         else:
             if not remaining_decisions:
-                all_paths.append(current_path)
+                AddNewRoad(current_path, all_paths)
+                #all_paths.append(current_path)
                 return
             explore_decision_tree(remaining_decisions, original_path, all_paths)
 
+count = 0
+
+def AddNewRoad(road:ActionChain, all_paths:list, force_save = False):
+    global count
+    count += 1
+    print(count)
+    all_paths.append(road)
+    if len(all_paths) == 1000000 or force_save:  # One million
+        print('llegamos al millón, guardando respaldo y limpiando ramm')
+        with open(f'{fileName}.vnta', 'ab') as f:
+            for path in all_paths:
+                pickle.dump(path, f)
+        
+        all_paths.clear()
 
 def CreateDecisionsTree():
     ''' Each Decision branches the start point creating a tree of Decisions '''
+
+    if os.path.exists(f'{fileName}.vnta'): os.remove(f'{fileName}.vnta')
     crt_id = 0  # Current decision index
     InitDecisionTree()
     firsts_options = all_decisions[0].options
@@ -73,8 +93,38 @@ def CreateDecisionsTree():
 
     explore_decision_tree(all_decisions, [], roads)
 
+    to_save = {
+        'all_decisions': all_decisions,
+        'novel_points': novel_points,
+        'endings': endings
+    }
+
+    with open(f'{fileName}.vnta', 'ab') as f:
+        pickle.dump(to_save, f)
+
+    elements = []
+
+    with open (f'{fileName}.vnta', 'rb') as f:
+        while True:
+            try:
+                element = pickle.load(f)
+                elements.append(element)
+            except:
+                break
+    
+
+    for e in elements: print(e)
+    return
+
+    important:dict = data[-1]
+    roads = data[0:-1]
+
+
     print()
     for r in roads: print(r.summary(1))
+
+    for k, v in important.items():
+        print (k, v)
 
 
 
