@@ -19,6 +19,7 @@ file_select_frame.pack()
 #  Global vars
 file_path = StringVar()
 search_filter = StringVar()
+lite_mode_var = BooleanVar()
 
 TITLES = {
     'main': 'Select an option',
@@ -79,13 +80,13 @@ def OpenAnalyticsWindow():
         index_header.grid(column=3, row=5, sticky='ew')
 
 
-        endingsStatistics = GetEndingStatistics(endings,len(all_ways))
+        endingsStatistics = GetEndingStatistics(endings, len(all_ways))
         # filling endings table
         i = 6
         for ending, data in endingsStatistics.items():
             ed = Label(menu_side, text=ending, background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', borderwidth=1, relief=SOLID, highlightbackground='white')
             count = Label(menu_side, text=data['count'], background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', borderwidth=1, relief=SOLID, highlightbackground='white')
-            percent = Label(menu_side, text=str(int(data['percent'])) + '%', background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', borderwidth=1, relief=SOLID, highlightbackground='white')
+            percent = Label(menu_side, text=str(float(data['percent'])) + '%', background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', borderwidth=1, relief=SOLID, highlightbackground='white')
             index = Label(menu_side, text=data['index'], background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', borderwidth=1, relief=SOLID, highlightbackground='white')
 
             ed.grid(column=0, row=i, sticky='ew')
@@ -115,7 +116,7 @@ def OpenAnalyticsWindow():
             if search_target == 'roads':
                 # Getting the results
                 results = GetRoadsBySearch(search_filter.get(), search_entry.get())
-                results = GetSortedActionChain(results)
+                #results = GetSortedActionChain(results)
             elif search_target == 'decisions':
                 # Getting the results
                 results = GetDecisionsBySearch(search_filter.get(), search_entry.get())
@@ -125,11 +126,13 @@ def OpenAnalyticsWindow():
             if results is None:
                 decisionList.insert(0, 'Not results found')
             else:
-                for i, result in enumerate(results):
+                for result in results:
                     if search_target == 'roads':
-                        decisionList.insert(i, result.summary(1))
+                        decisionList.insert(END, result.summary(1))
                     elif search_target == 'decisions':
-                        decisionList.insert(i, result.summary(1, novel_points))
+                        for option in result.options:
+                            to_add = f'{option.id}  |||  {result.name} ||| {option.name}  ||| {option.get_points_as_str(novel_points)}'
+                            decisionList.insert(END, to_add)
 
                 results_found.config(text=f'Resuls found: {len(results)}')
 
@@ -139,7 +142,7 @@ def OpenAnalyticsWindow():
                 elif search_target == 'decisions':
                     percent /= len(all_decisions)
 
-                results_percent.config(text=f'Percent: {percent}%')
+                results_percent.config(text=f'Percent: {percent:.2f}%')
 
         def get_radio_buttons(context:str) -> list[Radiobutton]:
             if context == 'roads':
@@ -271,19 +274,24 @@ def create_or_load_decision_tree():
         if '.vnta' in format:
             browse_info.config(text='Loading decision tree...')
 
-        all_decisions, all_ways, endings, novel_points = StartDecisionsTree(file_path.get())
-        
+        all_decisions, all_ways, endings, novel_points = StartDecisionsTree(file_path.get(), lite_mode_var.get())
         OpenAnalyticsWindow()   
     
+lite_mode_var.set(True)
 
 #  Creating widgets
 title = Label(file_select_frame, text='Select your decisions file', font=(MY_FONT,20), background=MY_BACKGROUND, fg='white')
+lite_mode_check = Checkbutton(
+    file_select_frame, text='Lite Mode',
+    font=(MY_FONT,20), activebackground=MY_BACKGROUND, selectcolor=MY_BACKGROUND, 
+    background=MY_BACKGROUND, fg='white', variable=lite_mode_var)
 browse_button = Button(file_select_frame, text='Search decisions file', bg='#404040', fg='white', command=create_or_load_decision_tree)
 browse_info = Label(file_select_frame, text='', font=(MY_FONT,20), background=MY_BACKGROUND, fg='white')
 
 
 #  Styling widgets
 title.grid(column=0, row=0, columnspan=20, sticky='ew', pady=(5,35), padx=10)
+lite_mode_check.grid(column=0, row=1, columnspan=20, sticky='ew', pady=(5,35), padx=10)
 browse_button.grid(column=0, row=2, columnspan=20, sticky='ew', pady=(5,35), padx=10)
 browse_info.grid(column=0, row=3, columnspan=20, sticky='ew', pady=(5,35), padx=10)
 

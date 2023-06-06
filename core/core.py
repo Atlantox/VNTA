@@ -10,26 +10,32 @@ AVAILABLE_FORMATS = ['.csv', '.xlsx']
 filePath = ''
 fileName = ''
 fileFormat = ''
+full_mode = False
 all_ways:list[ActionChain] = []  # The list of all ActionChain
-all_decisions, novel_points = [], []
-total_combinations = 1
+all_decisions:list[Decision] = []
+novel_points:list[str] = []
 endings = {}  # Ending statistics
 
 
-def StartDecisionsTree(path):
+def StartDecisionsTree(path, lite_mode):
     ''' Reset all the global variables and Create or load the decision tree if exists '''
-    global all_decisions, novel_points, fileName, filePath, fileFormat, all_ways, endings, total_combinations
+    global all_decisions, novel_points, fileName, filePath, fileFormat, all_ways, endings, full_mode
+    full_mode = not lite_mode
     all_ways, all_decisions, novel_points = [], [], [] # Cleaning global variables
     endings = {}
     filePath = path
     fileName, fileFormat = GetFileNameAndFormat(filePath)
 
     if fileFormat in AVAILABLE_FORMATS:
-        all_decisions, novel_points, total_combinations, endings = ReadDecisions(filePath, fileFormat)
+        all_decisions, novel_points, endings = ReadDecisions(filePath, fileFormat)
         CreateDecisionsTree()
     elif fileFormat == '.vnta':
         LoadDecisionsTree()  
 
+    #print(all_decisions , '\n')
+    #print(all_ways , '\n')
+    #print(endings , '\n')
+    #print(novel_points , '\n')
     return all_decisions, all_ways, endings, novel_points
 
 def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, all_paths:list):
@@ -49,49 +55,46 @@ def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, al
         if original_path.option_is_compatible(option, current_decision.type):
             if 'E-' == current_decision.type[0:2]:
                 endingType = current_decision.type[2:]
-                original_path.take_option(option, current_decision.type)
+                #original_path.take_option(option, current_decision.type)
+                global endings
                 endings[endingType] += 1
-                AddNewRoad(original_path, all_paths)
+                #AddNewRoad(original_path, all_paths)
                 #all_paths.append(original_path)
-                continue
+                #continue
 
-            explore_decision_tree(remaining_decisions, original_path.copy().take_option(option, current_decision.type), all_paths)
+                explore_decision_tree([], original_path.copy().take_option(option, current_decision.type), all_paths)
+            else:
+                explore_decision_tree(remaining_decisions, original_path.copy().take_option(option, current_decision.type), all_paths)
         else:
-            if not remaining_decisions:
-                AddNewRoad(current_path, all_paths)
+            #if not remaining_decisions:
+                #AddNewRoad(current_path, all_paths)
                 #all_paths.append(current_path)
-                return
+                #continue
             explore_decision_tree(remaining_decisions, original_path, all_paths)
 
-count = 0
 
 def AddNewRoad(road:ActionChain, all_paths:list, force_save = False):
-    global count
-    count += 1
-    print(count)
+    #print(road)
     all_paths.append(road)
-    if len(all_paths) == 1000000 or force_save:  # One million
-        print('llegamos al millón, guardando respaldo y limpiando ramm')
-        with open(f'{fileName}.vnta', 'ab') as f:
-            for path in all_paths:
-                pickle.dump(path, f)
-        
-        all_paths.clear()
+
+    #for p in all_paths: print(p, full_mode)
+    #print()
+    #print(road)
+    if full_mode:
+        if len(all_paths) == 1000000 or force_save:  # One million
+            with open(f'{fileName}.vnta', 'ab') as f:
+                for path in all_paths:
+                    pickle.dump(path, f)
+                all_paths.clear()
 
 def CreateDecisionsTree():
     ''' Each Decision branches the start point creating a tree of Decisions '''
-
+    global all_ways
     if os.path.exists(f'{fileName}.vnta'): os.remove(f'{fileName}.vnta')
-    crt_id = 0  # Current decision index
-    InitDecisionTree()
-    firsts_options = all_decisions[0].options
-    firsts_ids = [o.id for o in firsts_options]
-    current_combinations = int(total_combinations / len(firsts_options))
-    print(total_combinations)
 
-    roads = []
+    all_ways = []
 
-    explore_decision_tree(all_decisions, [], roads)
+    explore_decision_tree(all_decisions, [], all_ways)
 
     to_save = {
         'all_decisions': all_decisions,
@@ -102,279 +105,10 @@ def CreateDecisionsTree():
     with open(f'{fileName}.vnta', 'ab') as f:
         pickle.dump(to_save, f)
 
-    elements = []
+    LoadDecisionsTree(f'{fileName}.vnta')
+    #for r in all_ways: print(r.summary(1))
 
-    with open (f'{fileName}.vnta', 'rb') as f:
-        while True:
-            try:
-                element = pickle.load(f)
-                elements.append(element)
-            except:
-                break
-    
-
-    for e in elements: print(e)
-    return
-
-    important:dict = data[-1]
-    roads = data[0:-1]
-
-
-    print()
-    for r in roads: print(r.summary(1))
-
-    for k, v in important.items():
-        print (k, v)
-
-
-
-    return
-
-    roads = []
-    for id in firsts_ids:
-        roads += [id + ','] * int(total_combinations / len(firsts_options))
-    #print(len(roads))
-    r_id = 0
-    count = 0
-    for decision in all_decisions[1:]:
-        print(decision.name)
-        if decision.type == 'D':
-            current_combinations /= len(decision.options)
-            o_id = 0
-
-            while True:
-                #print(r_id)
-                to_add = roads[r_id] + decision.options[o_id].id + ','
-                #print(f'{r_id}:{r_id+int(current_combinations)} -> {decision.options[o_id].name}')
-
-                roads[r_id:r_id+int(current_combinations)] = [to_add] * int(current_combinations)
-
-                r_id += int(current_combinations)
-                if r_id == len(roads):
-                    r_id = 0
-                    #print('rompe aquí')
-                    break
-                o_id += 1
-                if o_id == len(decision.options): o_id = 0
-                count += 1
-                print(count)
-                if count >= len(roads):
-                    #print('rompe acá')
-                    break
-                '''
-                count += 1
-                if count == current_combinations:
-                    o_id += 1
-                    if o_id == len(decision.options): o_id = 0
-                    count = 0
-                
-                #print(current_combinations)
-                if r_id == len(roads):  
-                    break
-                '''
-        
-
-    print('\n')
-    for r in roads: print(r)
-    print('decisiones', len(all_decisions))
-    print('caminos', total_combinations)
-    print('caminos reales', len(roads))
-
-
-    '''
-
-    left_priority = True
-    roads_left = total_combinations
-    final_roads = []
-
-    
-    currentRoad = ActionChain(points=novel_points)
-    initial_ids = list(range(0, len(all_decisions[0].options)))
-    cycles = len(initial_ids)
-    initial_position = 1
-
-
-    while(roads_left > 0):
-        first_decision = True
-        for decision in all_decisions:
-            
-            if decision.type == 'D':
-                if first_decision:
-                    first_decision = False
-                    cycles -= 1
-                    if cycles == 0:
-                        cycles = len(initial_ids)
-                        left_priority = not left_priority
-                    if len(initial_ids) == 2:
-                        if initial_position == 0: initial_position = 1
-                        elif initial_position == 1: initial_position = 0
-                    else:
-                        if left_priority:
-                            initial_position += 1
-                            if initial_position >= len(initial_ids): initial_position = 0
-                        else:
-                            if roads_left == total_combinations / 2:
-                                # Half of roads recently reached
-                                initial_position = 0
-                                pass
-                            else:
-                                initial_position -= 1
-                                if initial_position < 0: initial_position = len(initial_ids) - 1
-                        
-                    #print(initial_position)
-                    option_to_take = decision.options[initial_ids[initial_position]]
-                else:
-                    option_to_take:Option = decision.get_option_to_take(left_priority)
-
-                #print(decision.name, option_to_take)
-                if currentRoad.option_is_compatible(option_to_take):
-                    left_priority = not left_priority
-                    currentRoad.take_option(option_to_take)
-                    option_to_take.times -= 1
-
-        roads_left -= 1
-        final_roads.append(currentRoad)
-        currentRoad = ActionChain(points=novel_points)
-
-        if roads_left == total_combinations / 2: left_priority = False
-
-
-    print('Total combinations:', len(final_roads))
-    u = GetSortedActionChain(final_roads)
-    print(len(u))
-    #for r  oad in GetSortedActionChain(final_roads):
-        #print(road.summary(0))
-    '''
-        
-        
-    '''
-    for decision in all_decisions:
-        if decision.type == 'D':
-            print(decision.name, decision.times)
-            for option in decision.options:
-                print(option, option.times)
-    '''
-
-    return
-
-
-
-    while crt_id < len(all_decisions):
-        currentDecision:Decision =  all_decisions[crt_id]
-
-        if currentDecision.type == 'D':  # Decision
-            ''' A decision consist in a situation and several possible options '''
-            related_decisions = GetRelatedDecisions(currentDecision, crt_id)            
-
-            crt_id += len(related_decisions) - 1 # Skipping the related decisions for the while loop
-            i = 0
-
-            if all_ways == []:
-                # We insert the first decision, the begin of all paths
-                for decision in related_decisions:                    
-                    to_add = ActionChain([decision], novel_points).change_points(decision)
-                    # Creating a ACtionChain and setting the initial novel points
-                    all_ways.append(to_add)
-
-            else:
-                # At least one path exists
-                for i in range(len(all_ways)):
-                    #  For each path we will try to take the current decision
-                    if not all_ways[i].decision_is_compatible(currentDecision):
-                        continue
-
-                    original_way = all_ways[i].copy() # A copy of the current way before it changes                    
-
-                    first = True
-                    for decision in related_decisions:
-                        if first:
-                            # If is the first decision, the current path will take it
-                            all_ways[i].take_decision(decision)
-                            first = False
-                        else:
-                            # If not the first decision, a copy of the original way take the decision and appends it in all_ways
-                            all_ways.append(original_way.copy().take_decision(decision))
-
-
-        elif currentDecision.type == 'C':  # Consecuence
-            ''' Consecuence decision consist in a decision that happen depending of a previous decision taken '''
-            if all_ways == []:
-                messagebox.showerror('Decision type error', f"Decision '{currentDecision.id}' type cannot be C without a previous Decision")
-                raise KeyError('Incorrect C decision type usage')
-            else:
-                for way in all_ways:
-                    if not way.decision_is_compatible(currentDecision):
-                        continue  # If not compatible, continue in the next way
-                    
-                    way.take_decision(currentDecision)
-
-        elif currentDecision.type == 'I':   # If condition
-            '''
-            An if condition Decision is taken only if the current road have the requeriments
-            The conditions are bassed in novel points
-            '''
-            for way in all_ways:
-                if not way.decision_is_compatible(currentDecision):
-                        continue  # If not compatible, continue in the next way
-
-                CheckCondition(way, currentDecision)
-
-        elif 'E-' in currentDecision.type:  # Endings
-            '''
-            An ending can depend of 2 things, by novel points and/or a previous Decision
-            if the road meets the condition, that road ends
-            '''
-            for way in all_ways:
-                available_to_take = False
-                if not way.decision_is_compatible(currentDecision):
-                    continue  # If not compatible, continue in the next way
-                
-                if novel_points == []:
-                    #  If the novel's decisions doesn't have points
-                    available_to_take = True
-                else:
-                    #  If the novel's decisions have points, check the condition
-                    if CheckCondition(way, currentDecision):
-                        available_to_take = True
-
-                if available_to_take:
-                    endingType = currentDecision.type.split('-')[1]
-                    way.finish(endingType)
-
-                    try:
-                        endings[endingType] += 1
-                    except KeyError:
-                        endings[endingType] = 1
-
-
-
-                        
-        else:
-            messagebox.showerror('Decision type error', f"Decision '{currentDecision.id}' has wrong type: {currentDecision.type}\nPlease use D, C, I or E-")
-            raise KeyError('Unknown decision type usage')
-
-        crt_id += 1
-        #print(len(all_ways))
-
-    if fileFormat in AVAILABLE_FORMATS:
-        '''
-        In cases of you have a really big list of decisions, with a
-        really big list of possible roads, these roads, novel points and decisions
-        are saved in a .vnta file to save processor effort in the next time
-        .vnta files can be opened by the same program
-        '''
-        save_path = SaveDecisionsTree()
-
-    messagebox.showinfo('Success', 'Decision tree successfully created and saved in: ' + save_path)
-
-
-def InitDecisionTree():
-    for decision in all_decisions:
-        if decision.type == 'D':
-            decision.times = total_combinations
-            times_per_option = int(total_combinations / len(decision.options))
-            for option in decision.options:
-                option.times = times_per_option
+    messagebox.showinfo('Success', 'Decision tree successfully created and saved as: ' + f'{fileName}.vnta')
 
 
 def SaveDecisionsTree():
@@ -400,16 +134,30 @@ def SaveDecisionsTree():
     return new_path
 
 
-def LoadDecisionsTree():
+def LoadDecisionsTree(path):
     '''
     If a .vnta file is given, all data is loaded from that file
     This function is usefull when you have a really really big decision tree
     '''
-    file = open(filePath, 'rb')
-    data = pickle.load(file)
-    file.close()
+    elements = []
+    with open (path, 'rb') as f:
+        while True:
+            try:
+                element = pickle.load(f)
+                elements.append(element)
+            except:
+                break
 
-    for w in data['all_ways']: all_ways.append(w)
+    data = elements[-1]
+    #  Cleaning the global variables
+    all_ways.clear()
+    novel_points.clear()
+    endings.clear()
+    all_decisions.clear()
+    # Filling the global variables
+    for w in elements[0:-1]:
+        all_ways.append(w)
+        #print(w)
     for p in data['novel_points']: novel_points.append(p)
     for e, v in data['endings'].items(): endings[e] = v
     for d in data['all_decisions']: all_decisions.append(d)
@@ -439,53 +187,46 @@ def GetDecisionsBySearch(search_type:str, search:str = ''):
         return all_decisions
 
     results = []
-    items = [v.strip() for v in search.split(',') if v != '']
+    items = [v.strip().lower() for v in search.split(',') if v != '']
+
     if search_type == 'id':
         for d in all_decisions:
-            if d.id in items: results.append(d)                
+            for option in d.options:
+                if option.id.lower() in items: results.append(d)                
 
     elif search_type == 'name':
         for d in all_decisions:
             for name in items:
-                if name in d.name:
+                if name in d.name.lower():
                     results.append(d)
                     break
                 
     elif search_type == 'option':
         for d in all_decisions:
-            for option in items:
-                if d.option is not None:
-                    if option in d.option:
+            for option in d.options:
+                if option.name is not None and option.name.lower() in items:
                         results.append(d)
                         break
 
     elif search_type == 'dependency':
         for d in all_decisions:
-            for dependency in items:
-                if d.dependencies is not None:
-                    if dependency in d.dependencies:
-                        results.append(d)
-                        break
-
-    elif search_type == 'points':
-        indexes = []
-        for point in items:
-            for i, real_point in enumerate(novel_points):
-                if point == real_point: 
-                    indexes.append(i)
+            for option in d.options:
+                # If the option have dependencies and these dependencies match with the items
+                if option.dependencies is not None and (set(option.dependencies) & set(items)):
+                    results.append(d)
                     break
 
-        if indexes != []:
-            for d in all_decisions:
-                pointOK = True
-                # Checking if decision affects targets points
-                for index in indexes:
-                    if d.points[index] is None:
-                        pointOK = False
-                        break
+    elif search_type == 'points':
+        indexes = [id for id, value in enumerate(novel_points) if value in items]
 
-                if pointOK:
-                    results.append(d)
+        if len(novel_points) != 0:
+            for d in all_decisions:
+                found = False
+                for option in d.options:
+                    found = any(index in indexes for index, _ in enumerate(option.points) if _ is not None)
+                    if found: break
+
+                if found: results.append(d)
 
     if results == []: results = None
 

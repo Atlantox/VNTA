@@ -20,11 +20,11 @@ def ReadDecisions(filePath:str, fileFormat:str):
     ''' Return all decisions in the specified .csv or excel file and the novel points '''
     decisions = []
     if fileFormat == '.xlsx': # Excel file
-        decisions, novel_points, total_combinations, endings = LoadDecisionsFromExcel(filePath)        
+        decisions, novel_points, endings = LoadDecisionsFromExcel(filePath)        
     elif fileFormat == '.csv':  # CSV file
-        decisions, novel_points, total_combinations, endings = LoadDecisionsFromCSV(filePath)
+        decisions, novel_points, endings = LoadDecisionsFromCSV(filePath)
         
-    return decisions, novel_points, total_combinations, endings
+    return decisions, novel_points, endings
 
 
 def LoadDecisionsFromExcel(filePath:str):
@@ -38,7 +38,6 @@ def LoadDecisionsFromExcel(filePath:str):
     sheet = excel['decisions']
     rows = sheet.iter_rows()
     all_rows = [r for r in rows if str(r[0].value) != 'None']
-    total_combinations = 1
 
     i = 0
     while(i < len(all_rows)):
@@ -88,9 +87,6 @@ def LoadDecisionsFromExcel(filePath:str):
                     points=points
                 ))
 
-            if dtype == 'D':
-                total_combinations *= len(options)
-
             decisions.append(Decision(
                 id=id,
                 type=dtype,
@@ -100,7 +96,7 @@ def LoadDecisionsFromExcel(filePath:str):
 
         i+=1
 
-    return decisions, novel_points, total_combinations, endings
+    return decisions, novel_points, endings
 
 
 def GetPointsAndDependencies(points:list[str], dependencies:str):
@@ -108,7 +104,8 @@ def GetPointsAndDependencies(points:list[str], dependencies:str):
     local_dependencies = []
     for point in points:
         #  Converting the points in to useful values
-        if point != 'None': local_points.append(int(point))
+        if (point != 'None' or point is not None) and point != '': 
+            local_points.append(int(point))
         else: local_points.append(None)            
 
     if dependencies != 'None':
@@ -122,6 +119,7 @@ def GetPointsAndDependencies(points:list[str], dependencies:str):
 def LoadDecisionsFromCSV(filePath:str):
     ''' Return a list of Decisions and novel_points of target CSV file '''
     decisions = []
+    endings = {}
     with open(filePath, 'r', encoding='utf-8') as f: #  Open the CSV file
         lines = f.readlines()
         f.close()
@@ -129,38 +127,61 @@ def LoadDecisionsFromCSV(filePath:str):
     # Getting the novel points names
     novel_points = [l.strip() for l in lines[0].split(';')[5:]]
 
-    for line in lines[1:]:  #  Ignoring the first row of headers
-        if line.strip() == '':
-            continue
+    crt_id = 1
+    rows = len(lines[1:])
+    related_lines = []
 
-        splits = [s.strip() for s in line.split(';')]
-        to_add = []
+    while crt_id < rows:
+        current_line = lines[crt_id].split(';')
+        related_lines = [current_line]
+        
+        count = 1
+        while True:
+            try:
+                new_line = lines[crt_id + count].split(';')
+            except:
+                break
+            
+            if [new_line[1], new_line[2]] == [current_line[1], current_line[2]]: # The line has the same name and type
+                related_lines.append(new_line)
+                count += 1
+            else:
+                break
+        crt_id += count - 1
 
-        for split in splits[:5]:  #  Iterating between the non-novel points fields
-            if split == '':
-                split = None
-            to_add.append(split)
+        options = []
+        for row in related_lines:
+            id = row[0]
+            dtype = row[1]
+            decision_name = row[2]
+            option = row[3]
+            dependencies = row[4]
 
-        if to_add[4] is not None:
-            # If the decision has dependency, convert the string into a list
-            dependencies = [s.strip() for s in to_add[4].split(',') if s != '']      
-        else:
-            dependencies = None
+            if 'E-' == dtype[0:2]:
+                ending_name = dtype[2:]
+                if ending_name not in endings: endings[ending_name] = 0
 
-        points = []
-        for split in splits[5:]:  #  Getting the novel points values of the Decision
-            points.append(None) if split == '' else points.append(int(split)) 
+            points = [p.strip() for p in row[5:5 + len(novel_points)]]
+            points, dependencies = GetPointsAndDependencies(points, dependencies)
 
+            options.append(Option(
+                id = id,
+                name = option,
+                points = points,
+                dependencies = dependencies
+            ))
+
+        
         decisions.append(Decision(
-            id=to_add[0],
-            type=to_add[1],
-            name=to_add[2],
-            option=to_add[3],
-            dependencies=dependencies,
-            points=points,
+            id=id,
+            type=dtype,
+            name=decision_name,
+            options=options,
         ))
-    
-    return decisions, novel_points
+
+        crt_id+=1
+
+    return decisions, novel_points, endings
 
 
 def CheckCondition(way:ActionChain, decision:Decision):
@@ -207,13 +228,16 @@ def ConditionIsRight(left, operator, right):
 
 def GetSortedActionChain(ways:list[ActionChain]):
     ''' Gets a list of ActionChain and returns it sorted by IdList '''
-    decisions = {}
+    decisions = dict()
     sortedDecisions = []
     for way in ways:
-        decisions[way.get_decision_sequency(True)] = way
-
+        if way.get_decision_sequency() in decisions.keys(): print(way, 'repetido')
+        decisions[way.get_decision_sequency()] = way
+    print('luego de guardar', len(decisions))
     keys = list(decisions.keys())
+    print('antes de ordenar', len(keys))
     keys.sort()
+    print('despues de ordenar', len(keys))
     for d in keys:
         sortedDecisions.append(decisions[d])
 
@@ -224,11 +248,11 @@ def GetEndingStatistics(endings:dict, roads:int):
     ''' Return a dict with statistics of endings given '''
     result = {}
     for key, value in endings.items():
-        percent = (value * 100) / roads
+        percent = round((value * 100) / roads, 2)
         to_add = {
             'count': value,
-            'percent': percent,
-            'index': percent / 100
+            'percent': f'{percent:.2f}',
+            'index': f'{(percent / 100):.2f}'
         }
         result[key] = to_add
 
