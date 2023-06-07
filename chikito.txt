@@ -1,0 +1,2 @@
+Caminos posibles: 12
+Endings:

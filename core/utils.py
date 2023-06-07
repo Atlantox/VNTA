@@ -44,8 +44,7 @@ def LoadDecisionsFromExcel(filePath:str):
         row = all_rows[i]
         if i == 0:
             # Getting the novels points names
-            novel_points = [str(c.value).strip() for c in row[5:] if str(c.value).strip() != '' and c.value is not None]
-    
+            novel_points = [str(c.value).strip() for c in row[5:] if str(c.value).strip() != '' and c.value is not None]    
         else:
             decision_name = str(row[2].value)
             related_rows = [row]
@@ -55,7 +54,6 @@ def LoadDecisionsFromExcel(filePath:str):
                 try:
                     next_row = all_rows[i + relatedCounter]
                     # If the name is None and the id cell is not empty, then is a decision with more than one option
-                    #print(str(next_row[0].value) == 'None')
 
                     if str(next_row[2].value) == 'None':
                         related_rows.append(next_row)
@@ -104,9 +102,10 @@ def GetPointsAndDependencies(points:list[str], dependencies:str):
     local_dependencies = []
     for point in points:
         #  Converting the points in to useful values
-        if (point != 'None' or point is not None) and point != '': 
+        try:
             local_points.append(int(point))
-        else: local_points.append(None)            
+        except:
+            local_points.append(None)            
 
     if dependencies != 'None':
         # If the decision has dependency, convert the string into a list
@@ -184,25 +183,6 @@ def LoadDecisionsFromCSV(filePath:str):
     return decisions, novel_points, endings
 
 
-def CheckCondition(way:ActionChain, decision:Decision):
-    '''
-    Get a conditional Decision and an ActionChain
-    Return True if the Decision was taken, otherwise return False
-    '''
-    i = 0
-    decision_taken = False
-    for operator in decision.option.split(','):
-        while decision.points[i] is None:
-            i += 1
-        
-        if ConditionIsRight(way.get_points_as_list()[i], operator, decision.points[i]):
-            way.take_decision(decision, False)
-            decision_taken = True
-        i += 1
-
-    return decision_taken
-
-
 def ConditionIsRight(left, operator, right):
     ''' Return True if (left operator right), otherwise return False '''
     result = False
@@ -225,19 +205,14 @@ def ConditionIsRight(left, operator, right):
 
     return result
 
-
 def GetSortedActionChain(ways:list[ActionChain]):
     ''' Gets a list of ActionChain and returns it sorted by IdList '''
     decisions = dict()
     sortedDecisions = []
     for way in ways:
-        if way.get_decision_sequency() in decisions.keys(): print(way, 'repetido')
         decisions[way.get_decision_sequency()] = way
-    print('luego de guardar', len(decisions))
     keys = list(decisions.keys())
-    print('antes de ordenar', len(keys))
     keys.sort()
-    print('despues de ordenar', len(keys))
     for d in keys:
         sortedDecisions.append(decisions[d])
 

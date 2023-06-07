@@ -65,38 +65,3 @@ class Decision:
                 result += f'{novel_points[i]}:  ({self.points[i]}) ||| '
 
         return result
-    
-    def get_option_to_take(self, left_priority):
-        options = self.get_hightest_options()
-
-        #for o in options:
-            #print(o)
-        #print()
-        
-        if len(options) == 1: return options[0]
-
-        if left_priority:
-            return options[0]
-        else:
-            return options[-1]
-
-    def get_hightest_options(self):
-        ids = []
-        max = 0
-
-        for i, option in enumerate(self.options):
-            if i == 0:
-                max = option.times
-            
-            if option.times == max:
-                ids.append(i)
-            elif option.times > max:
-                max = option.times
-                ids.clear()
-                ids.append(i)
-
-        hightest_options = []
-        for id in ids:
-            hightest_options.append(self.options[id])
-
-        return hightest_options

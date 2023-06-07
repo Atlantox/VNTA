@@ -1,0 +1,16 @@
+Caminos posibles: 64
+Endings:
+   expulsado:
+      Cantidad: 18
+      Porcentaje: 28.12%
+      Índice: 0.28
+
+   good:
+      Cantidad: 20
+      Porcentaje: 31.25%
+      Índice: 0.31
+
+   bad:
+      Cantidad: 26
+      Porcentaje: 40.62%
+      Índice: 0.41

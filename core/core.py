@@ -10,16 +10,21 @@ AVAILABLE_FORMATS = ['.csv', '.xlsx']
 filePath = ''
 fileName = ''
 fileFormat = ''
+progress_info = None
+window_frame = None
 full_mode = False
+total_combinations = 0
 all_ways:list[ActionChain] = []  # The list of all ActionChain
 all_decisions:list[Decision] = []
 novel_points:list[str] = []
 endings = {}  # Ending statistics
 
 
-def StartDecisionsTree(path, lite_mode):
+def StartDecisionsTree(path, lite_mode, progress_label, frame):
     ''' Reset all the global variables and Create or load the decision tree if exists '''
-    global all_decisions, novel_points, fileName, filePath, fileFormat, all_ways, endings, full_mode
+    global all_decisions, novel_points, fileName, filePath, fileFormat, all_ways, endings, full_mode, progress_info, window_frame
+    progress_info = progress_label
+    window_frame = frame
     full_mode = not lite_mode
     all_ways, all_decisions, novel_points = [], [], [] # Cleaning global variables
     endings = {}
@@ -30,12 +35,8 @@ def StartDecisionsTree(path, lite_mode):
         all_decisions, novel_points, endings = ReadDecisions(filePath, fileFormat)
         CreateDecisionsTree()
     elif fileFormat == '.vnta':
-        LoadDecisionsTree()  
+        LoadDecisionsTree(path)  
 
-    #print(all_decisions , '\n')
-    #print(all_ways , '\n')
-    #print(endings , '\n')
-    #print(novel_points , '\n')
     return all_decisions, all_ways, endings, novel_points
 
 def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, all_paths:list):
@@ -43,8 +44,18 @@ def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, al
         current_path = ActionChain(points=novel_points)
 
     if not decisions:
-        AddNewRoad(current_path, all_paths, True)
-        #all_paths.append(current_path)
+        global total_combinations
+        total_combinations += 1
+        #print(total_combinations)
+        try:
+            progress_info.config(text=total_combinations)
+        except:
+            exit()
+
+        window_frame.update()
+
+        if full_mode:
+            AddNewRoad(current_path, all_paths, True)
         return
 
     current_decision = decisions[0]
@@ -55,60 +66,58 @@ def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, al
         if original_path.option_is_compatible(option, current_decision.type):
             if 'E-' == current_decision.type[0:2]:
                 endingType = current_decision.type[2:]
-                #original_path.take_option(option, current_decision.type)
                 global endings
                 endings[endingType] += 1
-                #AddNewRoad(original_path, all_paths)
-                #all_paths.append(original_path)
-                #continue
 
                 explore_decision_tree([], original_path.copy().take_option(option, current_decision.type), all_paths)
             else:
                 explore_decision_tree(remaining_decisions, original_path.copy().take_option(option, current_decision.type), all_paths)
         else:
-            #if not remaining_decisions:
-                #AddNewRoad(current_path, all_paths)
-                #all_paths.append(current_path)
-                #continue
             explore_decision_tree(remaining_decisions, original_path, all_paths)
 
 
 def AddNewRoad(road:ActionChain, all_paths:list, force_save = False):
-    #print(road)
     all_paths.append(road)
-
-    #for p in all_paths: print(p, full_mode)
-    #print()
-    #print(road)
-    if full_mode:
-        if len(all_paths) == 1000000 or force_save:  # One million
-            with open(f'{fileName}.vnta', 'ab') as f:
-                for path in all_paths:
-                    pickle.dump(path, f)
-                all_paths.clear()
+    if len(all_paths) == 1000000 or force_save:  # One million
+        with open(f'{fileName}.vnta', 'ab') as f:
+            for path in all_paths:
+                pickle.dump(path, f)
+            all_paths.clear()
 
 def CreateDecisionsTree():
     ''' Each Decision branches the start point creating a tree of Decisions '''
     global all_ways
-    if os.path.exists(f'{fileName}.vnta'): os.remove(f'{fileName}.vnta')
+    if os.path.exists(f'{fileName}.vnta') and full_mode:
+        os.remove(f'{fileName}.vnta')
 
     all_ways = []
 
     explore_decision_tree(all_decisions, [], all_ways)
 
-    to_save = {
-        'all_decisions': all_decisions,
-        'novel_points': novel_points,
-        'endings': endings
-    }
+    if full_mode:
+        #  Save important info in the last element of the file
+        to_save = {
+            'all_decisions': all_decisions,
+            'novel_points': novel_points,
+            'endings': endings
+        }
 
-    with open(f'{fileName}.vnta', 'ab') as f:
-        pickle.dump(to_save, f)
+        with open(f'{fileName}.vnta', 'ab') as f:
+            pickle.dump(to_save, f)
 
-    LoadDecisionsTree(f'{fileName}.vnta')
-    #for r in all_ways: print(r.summary(1))
+        # Load the full saved paths
+        LoadDecisionsTree(f'{fileName}.vnta')
+        messagebox.showinfo('Success', 'Decision tree successfully created and saved as: ' + f'{fileName}.vnta')
+    else:
+        to_add = f'Caminos posibles: {total_combinations}\nEndings:'
 
-    messagebox.showinfo('Success', 'Decision tree successfully created and saved as: ' + f'{fileName}.vnta')
+        statistics = GetEndingStatistics(endings, total_combinations)
+        for key, value in statistics.items():
+            to_add += f"\n   {key}:\n      Cantidad: {value['count']}\n      Porcentaje: {value['percent']}%\n      Índice: {value['index']}\n"
+
+        with open(f'{fileName}.txt', 'w', encoding='utf-8') as f:
+            f.write(to_add)       
+        messagebox.showinfo('Success', 'Ending statistics successfully placed in: ' + f'{fileName}.txt')
 
 
 def SaveDecisionsTree():
@@ -155,9 +164,7 @@ def LoadDecisionsTree(path):
     endings.clear()
     all_decisions.clear()
     # Filling the global variables
-    for w in elements[0:-1]:
-        all_ways.append(w)
-        #print(w)
+    for w in elements[0:-1]: all_ways.append(w)
     for p in data['novel_points']: novel_points.append(p)
     for e, v in data['endings'].items(): endings[e] = v
     for d in data['all_decisions']: all_decisions.append(d)

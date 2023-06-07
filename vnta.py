@@ -266,16 +266,18 @@ def create_or_load_decision_tree():
     ))
 
     if file_path.get():
-
         format = file_path.get()[-5:]
         
+        '''
         if '.csv' in format:
             browse_info.config(text='Creating decision tree...')
         if '.vnta' in format:
             browse_info.config(text='Loading decision tree...')
+        '''
 
-        all_decisions, all_ways, endings, novel_points = StartDecisionsTree(file_path.get(), lite_mode_var.get())
-        OpenAnalyticsWindow()   
+        all_decisions, all_ways, endings, novel_points = StartDecisionsTree(file_path.get(), lite_mode_var.get(), browse_info, file_select_frame)
+        if not lite_mode_var.get():
+            OpenAnalyticsWindow()   
     
 lite_mode_var.set(True)
 
@@ -294,7 +296,5 @@ title.grid(column=0, row=0, columnspan=20, sticky='ew', pady=(5,35), padx=10)
 lite_mode_check.grid(column=0, row=1, columnspan=20, sticky='ew', pady=(5,35), padx=10)
 browse_button.grid(column=0, row=2, columnspan=20, sticky='ew', pady=(5,35), padx=10)
 browse_info.grid(column=0, row=3, columnspan=20, sticky='ew', pady=(5,35), padx=10)
-
-
 
 root.mainloop()    
