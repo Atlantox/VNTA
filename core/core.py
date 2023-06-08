@@ -16,7 +16,7 @@ full_mode = False
 total_combinations = 0
 all_ways:list[ActionChain] = []  # The list of all ActionChain
 all_decisions:list[Decision] = []
-novel_points:list[str] = []
+novel_points:list[str] = []  # The novel points names
 endings = {}  # Ending statistics
 
 
@@ -40,45 +40,63 @@ def StartDecisionsTree(path, lite_mode, progress_label, frame):
     return all_decisions, all_ways, endings, novel_points
 
 def explore_decision_tree(decisions:list[Decision], current_path:ActionChain, all_paths:list):
+    ''' 
+    A recursive function that explores all possible ways
+    '''
     if current_path == []:
+        # If the current path is empty, then create one
         current_path = ActionChain(points=novel_points)
 
     if not decisions:
+        # If not decisions left, then the ActionChain ends
         global total_combinations
-        total_combinations += 1
-        #print(total_combinations)
+        total_combinations += 1 # The ways finished
         try:
             progress_info.config(text=total_combinations)
+            # We set the text of the progress info in the window to give feedback to user
         except:
+            # If the user close the window, the program will stop
             exit()
 
+        # Necesary for update the progress info text
         window_frame.update()
 
         if full_mode:
+            # If the user is un full mode, then save the road
             AddNewRoad(current_path, all_paths, True)
-        return
+        return  # The recursivity ends
 
-    current_decision = decisions[0]
-    remaining_decisions = decisions[1:]
-    original_path = current_path.copy()
+    current_decision = decisions[0] # The first Decisions
+    remaining_decisions = decisions[1:] # The rest of Decisions
+    original_path = current_path.copy() # We create a copy to prevent duplicates
 
     for option in current_decision.options:
+        # For each option, if the option is compatible, take it
         if original_path.option_is_compatible(option, current_decision.type):
             if 'E-' == current_decision.type[0:2]:
+                # If the option is a Ending, then add the statistic to the endings global variable
                 endingType = current_decision.type[2:]
                 global endings
                 endings[endingType] += 1
-
+                # We call the self function but passing a empty list in the decisions parameter
+                # This will force the end of the road
                 explore_decision_tree([], original_path.copy().take_option(option, current_decision.type), all_paths)
             else:
+                # If is not a ending, then just take the Decision and continue with the rest of decision
                 explore_decision_tree(remaining_decisions, original_path.copy().take_option(option, current_decision.type), all_paths)
         else:
+            # The Decision is not compatible, then continues with the rest of Decisions
             explore_decision_tree(remaining_decisions, original_path, all_paths)
 
 
 def AddNewRoad(road:ActionChain, all_paths:list, force_save = False):
-    all_paths.append(road)
-    if len(all_paths) == 1000000 or force_save:  # One million
+    all_paths.append(road)  # Saving the current road
+    if len(all_paths) == 1000000 or force_save:
+        '''
+        If the list of roads reach one million of roads
+        append that million of roads in a .vnta file to clean RAM
+        WARNING: ONE MILLION OF ROADS ARE NEAR OF 200MB SO BECAREFUL WITH THAT
+        '''
         with open(f'{fileName}.vnta', 'ab') as f:
             for path in all_paths:
                 pickle.dump(path, f)
@@ -88,11 +106,11 @@ def CreateDecisionsTree():
     ''' Each Decision branches the start point creating a tree of Decisions '''
     global all_ways
     if os.path.exists(f'{fileName}.vnta') and full_mode:
+        # we delete the file if the user is in full mode
         os.remove(f'{fileName}.vnta')
 
     all_ways = []
-
-    explore_decision_tree(all_decisions, [], all_ways)
+    explore_decision_tree(all_decisions, [], all_ways)  # Exploring ALL posible paths
 
     if full_mode:
         #  Save important info in the last element of the file
@@ -103,50 +121,33 @@ def CreateDecisionsTree():
         }
 
         with open(f'{fileName}.vnta', 'ab') as f:
+            # Saving the info in the .vnta file
             pickle.dump(to_save, f)
 
-        # Load the full saved paths
+        # Now the load ALL paths from that file
+        # REMEMBER: BE CAREFUL WITH YOU DISK SPACE
         LoadDecisionsTree(f'{fileName}.vnta')
         messagebox.showinfo('Success', 'Decision tree successfully created and saved as: ' + f'{fileName}.vnta')
     else:
+        # If the user is in lite mode then just shows the endings statistics
         to_add = f'Caminos posibles: {total_combinations}\nEndings:'
 
         statistics = GetEndingStatistics(endings, total_combinations)
         for key, value in statistics.items():
             to_add += f"\n   {key}:\n      Cantidad: {value['count']}\n      Porcentaje: {value['percent']}%\n      Índice: {value['index']}\n"
 
+        # We save the results in a .txt
         with open(f'{fileName}.txt', 'w', encoding='utf-8') as f:
             f.write(to_add)       
         messagebox.showinfo('Success', 'Ending statistics successfully placed in: ' + f'{fileName}.txt')
-
-
-def SaveDecisionsTree():
-    '''
-    Once created the decision tree, it is saved in a file to prevent to create another equal decision tree
-    really useful if you have a really big list of decisions
-    Returns the path of the created .vnta file
-    '''
-    new_path = filePath.replace(fileName + fileFormat, fileName + '.vnta')
-    
-    file = open(new_path, 'wb')
-
-    to_save = {
-        'all_ways': all_ways,
-        'all_decisions': all_decisions,
-        'novel_points': novel_points,
-        'endings': endings
-    }
-
-    pickle.dump(to_save, file)
-    file.close()
-
-    return new_path
 
 
 def LoadDecisionsTree(path):
     '''
     If a .vnta file is given, all data is loaded from that file
     This function is usefull when you have a really really big decision tree
+    But a really really big decision tree means a really big space in disk
+    REMEMBER: BE CAREFUL WITH YOUR DISK SPACE
     '''
     elements = []
     with open (path, 'rb') as f:
@@ -170,18 +171,6 @@ def LoadDecisionsTree(path):
     for d in data['all_decisions']: all_decisions.append(d)
 
     messagebox.showinfo('Success', 'Decision tree successfully loaded')
-
-
-def GetRelatedDecisions(decision, crt_id):
-    ''' Get a decision and all the next decisions with same name '''
-    i = 1
-    related_decisions = [decision]
-    while decision.name == all_decisions[crt_id + i].name:
-        related_decisions.append(all_decisions[crt_id + i])
-        i += 1
-        if crt_id + i >= len(all_decisions): break
-    
-    return related_decisions
 
 
 def GetDecisionsBySearch(search_type:str, search:str = ''):

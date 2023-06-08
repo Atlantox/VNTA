@@ -15,8 +15,6 @@ class ActionChain:
     create a difficult or easy game based in bad ending and good ending
     '''
     def __init__(self, points:list|dict, idList:list = []):
-        #self.decisionChain = decisions  # A ordered list of decisions already taken
-        #self.idList = [d.id for d in self.decisionChain]  # A list of the ids of taken decisions
         self.idList = idList if idList else []
 
         if type(points) == list:
@@ -30,7 +28,7 @@ class ActionChain:
         return self.summary(0)
 
     def summary(self, detailLevel:int = 0):
-        ''' Recieve a number between 0 and 2, while larger the number more info is displayed '''
+        ''' Recieve a number between 0 and 1, while larger the number more info is displayed '''
         result = 'Empty'
         if self.idList != []:
             if detailLevel == 0:
@@ -40,24 +38,7 @@ class ActionChain:
             elif detailLevel == 1:
                 #  Return the sequence of ids of all decisions and the total novel points
                 result = self.get_decision_sequency()                
-                result += self.get_str_points()
-
-            elif detailLevel == 2:
-                #  Return id, name, option and dependencies of each decision taken and the novel points evolution
-                result = ''
-                keys = list(self.points.keys())
-                points_evolution = {k:0 for k in keys}
-                header = 'Id | Name | Option | Dependencies | Point Evolution\n'
-                result += f'Initial points: {points_evolution} \n'
-                result += header
-                result += ('#' * len(header)) + '\n'
-                for decision in self.decisionChain:
-                    for i in range(0,len(decision.points)):
-                        if decision.points[i] is None: continue
-
-                        points_evolution[keys[i]] += decision.points[i]
-
-                    result += f'{decision.id}- {decision.name} ||| {decision.option} ||| {decision.dependencies} ||| {points_evolution}\n'            
+                result += self.get_str_points()            
 
         return result
     
@@ -93,7 +74,12 @@ class ActionChain:
         return ActionChain(points=self.points.copy(), idList=self.idList.copy())
     
     def take_option(self, option:Option, dtype:str, change_points = True):
-        ''' Take a decision and add it to the decision chain '''
+        '''
+        Take an option an add it to the idList of options taked
+        If change_poitns = True, then the ACtionChain will modify
+        the points
+        If the option is a ending, then the ActionChain finish
+        '''
         if 'E-' == dtype[0:2] or dtype == 'I':
             change_points = False
 
@@ -120,7 +106,6 @@ class ActionChain:
     
     def get_points_as_list(self):
         ''' Return the points dict values as a list '''
-        #return [v for v in self.points.values()]
         return list(self.points.values())
     
     def option_is_compatible(self, option:Option, dtype:str):

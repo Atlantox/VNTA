@@ -45,7 +45,11 @@ def OpenAnalyticsWindow():
     mainWindow = Toplevel()
     mainWindow.title('Analytics window')
 
+
     def clear_menu():
+        '''
+        Clear the menu's content to refill it newly
+        '''
         for child in menu_side.winfo_children():
             if type(child) == Label:
                 if child.cget('text') in TITLES.values():
@@ -57,6 +61,9 @@ def OpenAnalyticsWindow():
 
 
     def show_summary():
+        '''
+        A window where the user will the main information: total roads and ending statistics
+        '''
         clear_menu()
         option_select.config(text=TITLES['summary'])
         summaryLabel = Label(menu_side, text=f'Total roads: {len(all_ways)}', background=MY_BACKGROUND, font=(MY_FONT, 13, 'bold'), fg='white')
@@ -97,6 +104,10 @@ def OpenAnalyticsWindow():
      
 
     def show_search_menu(context:str):
+        '''
+        Displays the search menu, recieves a context param, it will be 'roads' or 'decisions'
+        The menu will adjust to the context and will display the search filters and result statistics
+        '''
         clear_menu()
 
         if context == 'roads':
@@ -107,12 +118,17 @@ def OpenAnalyticsWindow():
         option_select.config(text=TITLES[context])
 
         def get_example_key():
+            ''' Return the key of the SEARCH_EXAMPLES to display in the example area '''
             return (context + '-' + search_filter.get()).lower()
+        
 
         def change_example():
+            ''' Change the text of the example area '''
             example_value.config(text=SEARCH_EXAMPLES[get_example_key()])
 
+
         def do_search(search_target:str):
+            ''' Recieve a search_target, that wil be 'roads' or 'decisions' and do the search '''
             if search_target == 'roads':
                 # Getting the results
                 results = GetRoadsBySearch(search_filter.get(), search_entry.get())
@@ -144,7 +160,9 @@ def OpenAnalyticsWindow():
 
                 results_percent.config(text=f'Percent: {percent:.2f}%')
 
+
         def get_radio_buttons(context:str) -> list[Radiobutton]:
+            ''' Return a list of RadioButtons correspondong to the possible search filters depending of the context '''
             if context == 'roads':
                 return [
                     Radiobutton(radio_container, text='Code', value='code', 
@@ -203,6 +221,7 @@ def OpenAnalyticsWindow():
         results_found = Label(menu_side, text='', background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', justify='left')
         results_percent = Label(menu_side, text='', background=MY_BACKGROUND, font=(MY_FONT, 13), fg='white', justify='left')
 
+        # If the user press Enter focusing the search entry, do the search
         search_entry.bind('<Return>', lambda event: do_search(context))
 
         search_entry.grid(column=0, row=1, sticky='ew', padx=15, columnspan=3)
@@ -212,7 +231,6 @@ def OpenAnalyticsWindow():
         for i, rb in enumerate(radio_buttons):
             # Placing the radio buttons
             rb.grid(column=i, row=0, sticky='ew', padx=5)
-
         
 
         labelFrame.grid(column=0, row=3, pady=15, padx=30, sticky='ew', columnspan=99)
@@ -255,7 +273,6 @@ def OpenAnalyticsWindow():
 
 def create_or_load_decision_tree():
     ''' Creates or load the decision tree '''
-
     global all_decisions, all_ways, endings, novel_points
     file_path.set(filedialog.askopenfilename(
         initialdir='.',
@@ -266,17 +283,9 @@ def create_or_load_decision_tree():
     ))
 
     if file_path.get():
-        format = file_path.get()[-5:]
-        
-        '''
-        if '.csv' in format:
-            browse_info.config(text='Creating decision tree...')
-        if '.vnta' in format:
-            browse_info.config(text='Loading decision tree...')
-        '''
-
         all_decisions, all_ways, endings, novel_points = StartDecisionsTree(file_path.get(), lite_mode_var.get(), browse_info, file_select_frame)
         if not lite_mode_var.get():
+            # If the user is in full mode then show the analytics window
             OpenAnalyticsWindow()   
     
 lite_mode_var.set(True)

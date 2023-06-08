@@ -72,6 +72,7 @@ def LoadDecisionsFromExcel(filePath:str):
                     ending_name = dtype[2:]
                     if ending_name not in endings: endings[ending_name] = 0
 
+                # The rest of fields are novel points
                 points = [str(c.value) for c in related[5:5 + len(novel_points)]]
                 points, dependencies = GetPointsAndDependencies(points, dependencies)
 
@@ -85,6 +86,7 @@ def LoadDecisionsFromExcel(filePath:str):
                     points=points
                 ))
 
+            # Once we have all related Options, create the Decision
             decisions.append(Decision(
                 id=id,
                 type=dtype,
@@ -98,6 +100,10 @@ def LoadDecisionsFromExcel(filePath:str):
 
 
 def GetPointsAndDependencies(points:list[str], dependencies:str):
+    '''
+    Obtain the points as list[str] and dependencies as str
+    Return the points an dependencies ordered
+    '''
     local_points = []
     local_dependencies = []
     for point in points:
@@ -131,25 +137,29 @@ def LoadDecisionsFromCSV(filePath:str):
     related_lines = []
 
     while crt_id < rows:
+        # We get the first line
         current_line = lines[crt_id].split(';')
         related_lines = [current_line]
         
         count = 1
         while True:
             try:
+                # If the index doesn't exists, then limit reached
                 new_line = lines[crt_id + count].split(';')
             except:
                 break
             
             if [new_line[1], new_line[2]] == [current_line[1], current_line[2]]: # The line has the same name and type
+                # We append it because is a Option of the same Decision
                 related_lines.append(new_line)
                 count += 1
             else:
                 break
-        crt_id += count - 1
+        crt_id += count - 1 # We jump the related Options
 
         options = []
         for row in related_lines:
+            # For each related Option, we prepare it and add to the options variable
             id = row[0]
             dtype = row[1]
             decision_name = row[2]
@@ -157,6 +167,7 @@ def LoadDecisionsFromCSV(filePath:str):
             dependencies = row[4]
 
             if 'E-' == dtype[0:2]:
+                # If the Option is a ending, we add it to the endings variable
                 ending_name = dtype[2:]
                 if ending_name not in endings: endings[ending_name] = 0
 
@@ -170,7 +181,7 @@ def LoadDecisionsFromCSV(filePath:str):
                 dependencies = dependencies
             ))
 
-        
+        # Once we have all related Options, create the Decision
         decisions.append(Decision(
             id=id,
             type=dtype,
@@ -206,13 +217,18 @@ def ConditionIsRight(left, operator, right):
     return result
 
 def GetSortedActionChain(ways:list[ActionChain]):
-    ''' Gets a list of ActionChain and returns it sorted by IdList '''
+    '''
+    Gets a list of ActionChain and returns it sorted by IdList
+    This function actually has no use because the recursive decison
+    tree explorer automatically orders the list of ActionChain
+    '''
     decisions = dict()
     sortedDecisions = []
     for way in ways:
+        # We create a dict with ['idList'] = ActionChain
         decisions[way.get_decision_sequency()] = way
     keys = list(decisions.keys())
-    keys.sort()
+    keys.sort() # Sorting the keys
     for d in keys:
         sortedDecisions.append(decisions[d])
 
