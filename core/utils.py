@@ -38,6 +38,7 @@ def LoadDecisionsFromExcel(filePath:str):
     sheet = excel['decisions']
     rows = sheet.iter_rows()
     all_rows = [r for r in rows if str(r[0].value) != 'None']
+    excel.close()
 
     i = 0
     while(i < len(all_rows)):
