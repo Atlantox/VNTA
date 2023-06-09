@@ -1,4 +1,5 @@
-V i s u a l   N o v e l   T e c h n i c a l   A s s i s t a n t
+Visual Novel Technical Assistant
+
 Version 1.0
 
 VNTA is a software with one single objective: Help authors to balance their visual novels.
