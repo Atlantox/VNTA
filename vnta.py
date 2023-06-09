@@ -11,6 +11,7 @@ root = Tk()
 root.title('Visual Novel Technical Assistant')
 root.resizable(False,False)
 root.config(bg=MY_BACKGROUND)
+root.iconbitmap("VNTA.ico")
 
 file_select_frame = Frame(root, bg=MY_BACKGROUND)
 file_select_frame.config()
@@ -44,6 +45,7 @@ def OpenAnalyticsWindow():
     ''' The main window where the user will do the basic commands '''
     mainWindow = Toplevel()
     mainWindow.title('Analytics window')
+    mainWindow.iconbitmap("VNTA.ico")
 
 
     def clear_menu():
