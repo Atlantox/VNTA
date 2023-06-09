@@ -1,6 +1,6 @@
 Visual Novel Technical Assistant
 
-Version 1.0
+Version 1.1
 
 VNTA is a software with one single objective: Help authors to balance their visual novels.
 
@@ -31,3 +31,6 @@ But if you are english speaker, don't worry, just follow the pattern of the exam
 10. Once you have finished your excel file, make sure that the excel sheet names 'decisions' then execute VNTA.exe and select the excel file, and BE CAREFUL WITH DEACTIVATE LITE MODE, if you only want to know the total combinations and/or the endings statistics, use the lite mode, but if you want to explore between the roads and decisions, deactivate the lite mode BUT I strongly recommend not do that if you visual novel has really many possible paths, deactivating the lite mode, the program will save each road in a .vnta file, once the roads are travelled, the roads are loaded in RAM memory and you will search and navigate between. WARNING: one million of roads are approximately 200MB so BE CAREFULL WITH YOUR DISK SPACE PLEASE, as advantaje, once created the .vnta file, you can open it with VNTA.exe and the decisions will be loaded from the file without travel all the roads again.
 
 Being english or spanish speaker, I hope that VNTA helps you so much!
+
+1.1 Version notes:
+* Fixed an error that prevent to save a excel file until you close the .exe, the excel file is opened for getting the rows and after it is closed
