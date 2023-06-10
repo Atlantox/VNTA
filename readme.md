@@ -1,6 +1,6 @@
 Visual Novel Technical Assistant
 
-Version 1.1
+Version 1.2
 
 VNTA is a software with one single objective: Help authors to balance their visual novels.
 
@@ -32,5 +32,5 @@ But if you are english speaker, don't worry, just follow the pattern of the exam
 
 Being english or spanish speaker, I hope that VNTA helps you so much!
 
-1.1 Version notes:
-* Fixed an error that prevent to save a excel file until you close the .exe, the excel file is opened for getting the rows and after it is closed
+1.2 Version notes:
+* Fixed a bug with Lite mode that do not resets the total combinations count

@@ -22,7 +22,8 @@ endings = {}  # Ending statistics
 
 def StartDecisionsTree(path, lite_mode, progress_label, frame):
     ''' Reset all the global variables and Create or load the decision tree if exists '''
-    global all_decisions, novel_points, fileName, filePath, fileFormat, all_ways, endings, full_mode, progress_info, window_frame
+    global all_decisions, novel_points, fileName, filePath, fileFormat, all_ways, endings, full_mode, progress_info, window_frame, total_combinations
+    total_combinations = 0
     progress_info = progress_label
     window_frame = frame
     full_mode = not lite_mode
