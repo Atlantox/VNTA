@@ -13,7 +13,7 @@ How to use it?
 
 Exists two ways, the easy (spanish) or the difficult
 
-If you speak spanish just look at that video and enjoy: 
+If you speak spanish just look at that video and enjoy:  https://www.youtube.com/watch?v=a2dJ_Ge2RAg
 
 But if you are english speaker, don't worry, just follow the pattern of the example.xlsx, anyway I leave the rules here:
 
